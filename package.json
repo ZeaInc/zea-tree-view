@@ -1,0 +1,25 @@
+{
+  "name": "@zeainc/zea-tree-view",
+  "version": "0.0.1",
+  "main": "dist/zea-tree-view.cjs.js",
+  "module": "dist/zea-tree-view.esm.js",
+  "browser": "dist/zea-tree-view.umd.js",
+  "dependencies": {
+    "@zeainc/zea-cad": "^4",
+    "@zeainc/zea-engine": "^4"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^21.0.1",
+    "@rollup/plugin-node-resolve": "^13.0.6",
+    "rollup": "^2.60.1"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "node test/test.js",
+    "pretest": "npm run build"
+  },
+  "files": [
+    "dist"
+  ]
+}

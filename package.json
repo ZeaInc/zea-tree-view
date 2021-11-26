@@ -1,6 +1,6 @@
 {
   "name": "@zeainc/zea-tree-view",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "dist/zea-tree-view.cjs.js",
   "module": "dist/zea-tree-view.esm.js",
   "browser": "dist/zea-tree-view.umd.js",
@@ -17,6 +17,7 @@
     "build": "rollup -c",
     "dev": "rollup -c -w",
     "test": "node test/test.js",
+    "prepare": "yarn run build",
     "pretest": "npm run build"
   },
   "files": [

@@ -355,8 +355,6 @@ TreeItemView.css = `
     height: 24px;
     width: 20px;
     padding: 0;
-    background-color: #0000;
-    color: azure;
     outline: none;
     margin: 2px 0 0 0;
   }
@@ -385,7 +383,6 @@ TreeItemView.css = `
   .TreeNodeHeader {
     display: flex;
     margin: 0 auto;
-    color: azure;
   }
 
   .TreeNodesListItem__Title {
@@ -395,20 +392,15 @@ TreeItemView.css = `
   }
 
   .TreeNodesListItem__Hover {
-    background-color: #e1f5fe;
   }
 
   .TreeNodesListItem__Dragging {
-    background-color: #e1f5fe;
   }
 
   .TreeNodesListItem--isSelected > .TreeNodeHeader > .TreeNodesListItem__Title {
-    // background-color: #76d2bb;
-    color: #3B3B3B;
   }
 
   .TreeNodesListItem--isHidden > .TreeNodeHeader >  .TreeNodesListItem__Title {
-    color: #9e9e9e;
   }
 
   .TreeNodesListItem--isHighlighted > .TreeNodeHeader >  .TreeNodesListItem__Title {
@@ -438,9 +430,10 @@ class ZeaTreeView extends HTMLElement {
     const styleTag = document.createElement('style')
     styleTag.appendChild(
       document.createTextNode(`
-    .ZeaTreeView {
-      height: 200px;
-    }`)
+      .ZeaTreeView {
+        height: 200px;
+      }
+      `)
     )
     shadowRoot.appendChild(styleTag)
 

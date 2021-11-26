@@ -2,15 +2,25 @@ import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import pkg from './package.json'
 
+const sourcemap = true
+const external = ['@zeainc/zea-engine', '@zeainc/zea-cad']
+
 export default [
   // browser-friendly UMD build
   {
     input: 'src/TreeView.js',
+    external,
     output: {
-      name: 'howLongUntilLunch',
+      name: 'zeaTreeView',
       file: pkg.browser,
       format: 'umd',
+      sourcemap,
+      globals: {
+        '@zeainc/zea-engine': 'zeaEngine',
+        '@zeainc/zea-cad': 'zeaCad',
+      },
     },
+
     plugins: [
       resolve(), // so Rollup can find `ms`
       commonjs(), // so Rollup can convert `ms` to an ES module
@@ -25,7 +35,7 @@ export default [
   // `file` and `format` for each target)
   {
     input: 'src/TreeView.js',
-    external: ['ms'],
+    external,
     output: [
       { file: pkg.main, format: 'cjs' },
       { file: pkg.module, format: 'es' },

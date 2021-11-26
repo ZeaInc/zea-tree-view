@@ -6,7 +6,7 @@
   "browser": "dist/zea-tree-view.umd.js",
   "dependencies": {
     "@zeainc/zea-cad": "^4",
-    "@zeainc/zea-engine": "^4"
+    "@zeainc/zea-engine": "^4.0.1"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^21.0.1",

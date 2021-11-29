@@ -1,5 +1,6 @@
 import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
+import typescript from 'rollup-plugin-typescript'
 import pkg from './package.json'
 
 const sourcemap = true
@@ -8,6 +9,11 @@ const globals = {
   '@zeainc/zea-engine': 'zeaEngine',
   '@zeainc/zea-cad': 'zeaCad',
 }
+const plugins = [
+  resolve(),
+  commonjs(),
+  typescript(), // so Rollup can convert TypeScript to JavaScript]
+]
 export default [
   // browser-friendly UMD build
   {
@@ -21,10 +27,7 @@ export default [
       globals,
     },
 
-    plugins: [
-      resolve(), // so Rollup can find `ms`
-      commonjs(), // so Rollup can convert `ms` to an ES module
-    ],
+    plugins,
   },
 
   // CommonJS (for Node) and ES module (for bundlers) build.
@@ -40,5 +43,6 @@ export default [
       { file: pkg.main, format: 'cjs', globals },
       { file: pkg.module, format: 'es', globals },
     ],
+    plugins,
   },
 ]

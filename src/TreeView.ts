@@ -5,7 +5,7 @@ const highlightColor = new Color('#F9CE03')
 highlightColor.a = 0.1
 
 let selectedItem
-const setSelection = (treeItem, state) => {
+const setSelection = (treeItem, state, appData) => {
   if (state) {
     if (selectedItem) {
       selectedItem.setSelected(false)
@@ -28,6 +28,21 @@ const setSelection = (treeItem, state) => {
  *
  */
 class TreeItemView extends HTMLElement {
+  itemContainer: any
+  itemHeader: any
+  itemChildren: any
+  expandBtn: HTMLButtonElement
+  expanded: boolean
+  childrenAlreadyCreated: boolean
+  titleElement: HTMLSpanElement
+  appData: any
+  treeItem: TreeItem
+  updateSelectedId: any
+  toggleVisibilityBtn: HTMLInputElement
+  updateVisibilityId: any
+  updateHighlightId: any
+  childAddedId: any
+  childRemovedId: any
   /**
    * Constructor.
    *
@@ -39,6 +54,7 @@ class TreeItemView extends HTMLElement {
 
     // Add component CSS
     const styleTag = document.createElement('style')
+    // @ts-ignore
     styleTag.appendChild(document.createTextNode(TreeItemView.css))
     shadowRoot.appendChild(styleTag)
 
@@ -98,6 +114,9 @@ class TreeItemView extends HTMLElement {
 
     //
     shadowRoot.appendChild(this.itemContainer)
+  }
+  static css(css: any): Text {
+    throw new Error('Method not implemented.')
   }
 
   /**
@@ -271,9 +290,10 @@ class TreeItemView extends HTMLElement {
    */
   addChild(treeItem, index) {
     if (this.expanded) {
-      const childTreeItem = document.createElement('tree-item-view')
+      const childTreeItem = document.createElement(
+        'tree-item-view'
+      ) as TreeItemView
       childTreeItem.setTreeItem(treeItem, this.appData)
-
       if (index == this.itemChildren.childElementCount) {
         this.itemChildren.appendChild(childTreeItem)
       } else {
@@ -301,7 +321,7 @@ class TreeItemView extends HTMLElement {
     }
   }
 
-  getChild(index) {
+  getChild(index: number) {
     return this.itemChildren.children[index]
   }
 
@@ -325,6 +345,7 @@ class TreeItemView extends HTMLElement {
   }
 }
 
+//@ts-ignore
 TreeItemView.css = `
   /* tree-view.css */
 
@@ -417,6 +438,11 @@ customElements.define('tree-item-view', TreeItemView)
  *
  */
 class ZeaTreeView extends HTMLElement {
+  treeContainer: HTMLDivElement
+  treeItemView: TreeItemView
+  rootTreeItem: any
+  appData: any
+  mouseOver: boolean
   /**
    * Constructor.
    *
@@ -443,7 +469,7 @@ class ZeaTreeView extends HTMLElement {
     shadowRoot.appendChild(this.treeContainer)
 
     // Init root tree item
-    this.treeItemView = document.createElement('tree-item-view')
+    this.treeItemView = document.createElement('tree-item-view') as TreeItemView
     this.treeContainer.appendChild(this.treeItemView)
 
     this.__onKeyDown = this.__onKeyDown.bind(this)
@@ -492,7 +518,7 @@ class ZeaTreeView extends HTMLElement {
     }
     if (event.key == 'ArrowLeft') {
       const newSelection = new Set()
-      Array.from(selectedItems).forEach((item) => {
+      Array.from(selectedItems).forEach((item: TreeItem) => {
         newSelection.add(item.getOwner())
       })
       if (newSelection.size > 0) {
@@ -522,11 +548,12 @@ class ZeaTreeView extends HTMLElement {
     if (event.key == 'ArrowUp') {
       // const selectedItems = selectionManager.getSelection()
       const newSelection = new Set()
-      Array.from(selectedItems).forEach((item) => {
-        const index = item.getOwner().getChildIndex(item)
+      Array.from(selectedItems).forEach((item: TreeItem) => {
+        const treeItemOwner = item.getOwner() as TreeItem
+        const index = treeItemOwner.getChildIndex(item)
         if (index == 0) newSelection.add(item.getOwner())
         else {
-          newSelection.add(item.getOwner().getChild(index - 1))
+          newSelection.add(treeItemOwner.getChild(index - 1))
         }
       })
       if (newSelection.size > 0) {
@@ -541,14 +568,15 @@ class ZeaTreeView extends HTMLElement {
     if (event.key == 'ArrowDown') {
       // const selectedItems = selectionManager.getSelection()
       const newSelection = new Set()
-      Array.from(selectedItems).forEach((item) => {
-        const index = item.getOwner().getChildIndex(item)
-        if (index < item.getOwner().getNumChildren() - 1)
-          newSelection.add(item.getOwner().getChild(index + 1))
+      Array.from(selectedItems).forEach((item: TreeItem) => {
+        const treeItemOwner = item.getOwner() as TreeItem
+        const index = treeItemOwner.getChildIndex(item)
+        if (index < treeItemOwner.getNumChildren() - 1)
+          newSelection.add(treeItemOwner.getChild(index + 1))
         else {
-          const indexinOwner = item.getOwner().getChildIndex(item)
-          if (item.getOwner().getNumChildren() > indexinOwner + 1)
-            newSelection.add(item.getOwner().getChild(indexinOwner + 1))
+          const indexinOwner = treeItemOwner.getChildIndex(item)
+          if (treeItemOwner.getNumChildren() > indexinOwner + 1)
+            newSelection.add(treeItemOwner.getChild(indexinOwner + 1))
         }
       })
       if (newSelection.size > 0) {
@@ -570,14 +598,14 @@ class ZeaTreeView extends HTMLElement {
       while (true) {
         path.splice(0, 0, item)
         if (item == this.rootTreeItem) break
-        item = item.getOwner()
+        if (item instanceof TreeItem) item = item.getOwner() as TreeItem
       }
       let treeViewItem = this.treeItemView
       path.forEach((item, index) => {
         if (index < path.length - 1) {
           if (!treeViewItem.expanded) treeViewItem.expand()
           const childIndex = item.getChildIndex(path[index + 1])
-          treeViewItem = treeViewItem.getChild(childIndex)
+          treeViewItem = treeViewItem.getChild(childIndex) as TreeItemView
         }
       })
       // causes the element to be always at the top of the view.

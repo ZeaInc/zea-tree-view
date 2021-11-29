@@ -4,21 +4,21 @@ import pkg from './package.json'
 
 const sourcemap = true
 const external = ['@zeainc/zea-engine', '@zeainc/zea-cad']
-
+const globals = {
+  '@zeainc/zea-engine': 'zeaEngine',
+  '@zeainc/zea-cad': 'zeaCad',
+}
 export default [
   // browser-friendly UMD build
   {
-    input: 'src/TreeView.js',
+    input: 'src/TreeView.ts',
     external,
     output: {
       name: 'zeaTreeView',
       file: pkg.browser,
       format: 'umd',
       sourcemap,
-      globals: {
-        '@zeainc/zea-engine': 'zeaEngine',
-        '@zeainc/zea-cad': 'zeaCad',
-      },
+      globals,
     },
 
     plugins: [
@@ -34,11 +34,11 @@ export default [
   // an array for the `output` option, where we can specify
   // `file` and `format` for each target)
   {
-    input: 'src/TreeView.js',
+    input: 'src/TreeView.ts',
     external,
     output: [
-      { file: pkg.main, format: 'cjs' },
-      { file: pkg.module, format: 'es' },
+      { file: pkg.main, format: 'cjs', globals },
+      { file: pkg.module, format: 'es', globals },
     ],
   },
 ]

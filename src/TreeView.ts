@@ -1,11 +1,26 @@
 import { Color, TreeItem } from '@zeainc/zea-engine'
+import { BaseEvent } from '@zeainc/zea-engine/dist/Utilities/BaseEvent'
 // import { CADBody, PMIItem } from '@zeainc/zea-cad'
+
+class ZeaTreeEvent extends BaseEvent {
+  childItem: TreeItem
+  index: number
+  constructor(index: number, childItem: TreeItem) {
+    super()
+    this.index = index
+    this.childItem = childItem
+  }
+}
 
 const highlightColor = new Color('#F9CE03')
 highlightColor.a = 0.1
 
-let selectedItem
-const setSelection = (treeItem, state, appData) => {
+let selectedItem: TreeItem
+const setSelection = (
+  treeItem: TreeItem,
+  state: boolean,
+  appData: Record<string, any>
+) => {
   if (state) {
     if (selectedItem) {
       selectedItem.setSelected(false)
@@ -309,16 +324,16 @@ class TreeItemView extends HTMLElement {
     }
   }
 
-  childAdded(event) {
+  childAdded(event: ZeaTreeEvent) {
     const { childItem, index } = event
     // if (!childItem.testFlag(ItemFlags.INVISIBLE))
     this.addChild(childItem, index)
   }
 
-  childRemoved(event) {
+  childRemoved(event: ZeaTreeEvent) {
     const { index } = event
     if (this.expanded) {
-      this.itemChildren.children[index].destroy()
+      this.itemChildren.children[index].remove() // TODO: (check) used to be : .destroy() instead of .remove()
       this.itemChildren.removeChild(this.itemChildren.children[index])
     }
   }
@@ -500,12 +515,12 @@ class ZeaTreeView extends HTMLElement {
   __onMouseLeave() {
     this.mouseOver = false
   }
-
-  __onKeyDown(event) {
+  // TODO: replace with zea version
+  __onKeyDown(event: KeyboardEvent) {
     if (!this.mouseOver || !this.appData) return
     const { selectionManager } = this.appData
     // if (!selectionManager) return
-    const selectedItems = selectionManager
+    const selectedItems: Set<TreeItem> = selectionManager
       ? selectionManager.getSelection()
       : selectedItem
       ? new Set([selectedItem])
@@ -519,9 +534,9 @@ class ZeaTreeView extends HTMLElement {
       return
     }
     if (event.key == 'ArrowLeft') {
-      const newSelection = new Set()
+      const newSelection: Set<TreeItem> = new Set()
       Array.from(selectedItems).forEach((item: TreeItem) => {
-        newSelection.add(item.getOwner())
+        newSelection.add(item.getOwner() as TreeItem)
       })
       if (newSelection.size > 0) {
         selectionManager.setSelection(newSelection)
@@ -596,14 +611,14 @@ class ZeaTreeView extends HTMLElement {
    */
   expandSelection(items: Set<TreeItem>, scrollToView = true) {
     Array.from(items).forEach((item: TreeItem) => {
-      const path = []
+      const path: TreeItem[] = []
       while (true) {
         path.splice(0, 0, item)
         if (item == this.rootTreeItem) break
         item = item.getOwner() as TreeItem
       }
       let treeViewItem = this.treeItemView
-      path.forEach((item, index) => {
+      path.forEach((item: TreeItem, index: number) => {
         if (index < path.length - 1) {
           if (!treeViewItem.expanded) treeViewItem.expand()
           const childIndex = item.getChildIndex(path[index + 1])

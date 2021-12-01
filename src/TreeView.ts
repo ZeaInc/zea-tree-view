@@ -28,9 +28,9 @@ const setSelection = (treeItem, state, appData) => {
  *
  */
 class TreeItemView extends HTMLElement {
-  itemContainer: any
-  itemHeader: any
-  itemChildren: any
+  itemContainer: HTMLDivElement
+  itemHeader: HTMLDivElement
+  itemChildren: HTMLDivElement
   expandBtn: HTMLButtonElement
   expanded: boolean
   childrenAlreadyCreated: boolean
@@ -124,7 +124,7 @@ class TreeItemView extends HTMLElement {
    * @param {object} treeItem Tree item.
    * @param {object} appData App data.
    */
-  setTreeItem(treeItem, appData) {
+  setTreeItem(treeItem: TreeItem, appData: Record<string, any>) {
     this.treeItem = treeItem
 
     this.appData = appData
@@ -156,6 +156,8 @@ class TreeItemView extends HTMLElement {
       this.toggleVisibilityBtn.addEventListener('click', () => {
         const visibleParam = this.treeItem.getParameter('Visible')
         if (this.appData && this.appData.undoRedoManager) {
+          // TODO: need UX
+          //@ts-ignore
           const change = new ParameterValueChange(
             visibleParam,
             !visibleParam.getValue()
@@ -244,7 +246,7 @@ class TreeItemView extends HTMLElement {
     }
   }
 
-  countChildren() {
+  countChildren(): number {
     const children = this.treeItem.getChildren()
     let count = 0
     children.forEach((childItem) => {
@@ -288,7 +290,7 @@ class TreeItemView extends HTMLElement {
    * @param {any} treeItem - The treeItem param.
    * @param {number} index - The expanded param.
    */
-  addChild(treeItem, index) {
+  addChild(treeItem: TreeItem, index: number) {
     if (this.expanded) {
       const childTreeItem = document.createElement(
         'tree-item-view'
@@ -440,8 +442,8 @@ customElements.define('tree-item-view', TreeItemView)
 class ZeaTreeView extends HTMLElement {
   treeContainer: HTMLDivElement
   treeItemView: TreeItemView
-  rootTreeItem: any
-  appData: any
+  rootTreeItem: TreeItem
+  appData: Record<string, any>
   mouseOver: boolean
   /**
    * Constructor.
@@ -485,7 +487,7 @@ class ZeaTreeView extends HTMLElement {
    * @param {object} treeItem Tree item.
    * @param {object} appData App data.
    */
-  setTreeItem(treeItem, appData) {
+  setTreeItem(treeItem: TreeItem, appData: Record<string, any>) {
     this.rootTreeItem = treeItem
     this.appData = appData
     this.treeItemView.setTreeItem(treeItem, appData)
@@ -531,7 +533,7 @@ class ZeaTreeView extends HTMLElement {
 
     if (event.key == 'ArrowRight') {
       // const selectedItems = selectionManager.getSelection()
-      const newSelection = new Set()
+      const newSelection: Set<TreeItem> = new Set()
       Array.from(selectedItems).forEach((item) => {
         if (item instanceof TreeItem && item.getNumChildren() > 0)
           newSelection.add(item.getChild(0))
@@ -547,11 +549,11 @@ class ZeaTreeView extends HTMLElement {
 
     if (event.key == 'ArrowUp') {
       // const selectedItems = selectionManager.getSelection()
-      const newSelection = new Set()
+      const newSelection: Set<TreeItem> = new Set()
       Array.from(selectedItems).forEach((item: TreeItem) => {
         const treeItemOwner = item.getOwner() as TreeItem
         const index = treeItemOwner.getChildIndex(item)
-        if (index == 0) newSelection.add(item.getOwner())
+        if (index == 0) newSelection.add(item.getOwner() as TreeItem)
         else {
           newSelection.add(treeItemOwner.getChild(index - 1))
         }
@@ -567,7 +569,7 @@ class ZeaTreeView extends HTMLElement {
 
     if (event.key == 'ArrowDown') {
       // const selectedItems = selectionManager.getSelection()
-      const newSelection = new Set()
+      const newSelection: Set<TreeItem> = new Set()
       Array.from(selectedItems).forEach((item: TreeItem) => {
         const treeItemOwner = item.getOwner() as TreeItem
         const index = treeItemOwner.getChildIndex(item)
@@ -592,13 +594,13 @@ class ZeaTreeView extends HTMLElement {
    * The expandSelection method.
    * @param {Map} items - The items we wish to expand to show.
    */
-  expandSelection(items, scrollToView = true) {
-    Array.from(items).forEach((item) => {
+  expandSelection(items: Set<TreeItem>, scrollToView = true) {
+    Array.from(items).forEach((item: TreeItem) => {
       const path = []
       while (true) {
         path.splice(0, 0, item)
         if (item == this.rootTreeItem) break
-        if (item instanceof TreeItem) item = item.getOwner() as TreeItem
+        item = item.getOwner() as TreeItem
       }
       let treeViewItem = this.treeItemView
       path.forEach((item, index) => {

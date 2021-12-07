@@ -1,9 +1,10 @@
-const { Color, TreeItem, InstanceItem } = window.zeaEngine
-const { CADBody, PMIItem } = zeaCad
+//const { Color, TreeItem, InstanceItem } = window.zeaEngine
+import { Color, TreeItem, InstanceItem } from '@zeainc/zea-engine'
+// const { CADBody, PMIItem } = zeaCad
 
 // ////////////////////////////////////////
 // Provide a simple debug mode to enable debugging the tree view.
-let displayTreeComplexity = false
+let displayTreeComplexity = true
 const colorStart = new Color(0, 0, 0)
 const colorEnd = new Color(1, 0, 0)
 const treeItemWeights = {}

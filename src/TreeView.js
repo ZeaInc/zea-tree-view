@@ -1,11 +1,61 @@
-import { Color, TreeItem } from '@zeainc/zea-engine'
-// import { CADBody, PMIItem } from '@zeainc/zea-cad'
+const { Color, TreeItem, InstanceItem } = window.zeaEngine
+const { CADBody, PMIItem } = zeaCad
+
+// ////////////////////////////////////////
+// Provide a simple debug mode to enable debugging the tree view.
+let displayTreeComplexity = false
+const colorStart = new Color(0, 0, 0)
+const colorEnd = new Color(1, 0, 0)
+const treeItemWeights = {}
+let rootTreeItemView
+let totalWeight = 0
+let recalcRequested = 0
+const updateTreeView = () => {
+  if (recalcRequested == 0) {
+    recalcRequested = setTimeout(() => {
+      rootTreeItemView.displayTreeWeight()
+      recalcRequested = 0
+    }, 100)
+  }
+}
+const propagateWeightUp = (treeItem, delta) => {
+  treeItemWeights[treeItem.getId()] += delta
+  if (treeItem.getOwner()) propagateWeightUp(treeItem.getOwner(), delta)
+}
+const calcTreeWeight = (treeItem) => {
+  let weight = 1 // self
+  const children = treeItem.getChildren()
+  children.forEach((childItem, index) => {
+    weight += calcTreeWeight(childItem)
+  })
+  treeItemWeights[treeItem.getId()] = weight
+
+  treeItem.on('childAdded', (event) => {
+    const { childItem } = event
+    const childWeight = calcTreeWeight(childItem)
+    totalWeight += childWeight
+    propagateWeightUp(treeItem, childWeight)
+
+    updateTreeView()
+  })
+  treeItem.on('childRemoved', (event) => {
+    const { childItem } = event
+    const childWeight = -calcTreeWeight(childItem)
+    totalWeight += childWeight
+    propagateWeightUp(treeItem, childWeight)
+
+    updateTreeView()
+  })
+  return weight
+}
+
+// ////////////////////////////////////////
 
 const highlightColor = new Color('#F9CE03')
 highlightColor.a = 0.1
 
 let selectedItem
-const setSelection = (treeItem, state) => {
+const setSelection = (treeItem, state, appData) => {
   if (state) {
     if (selectedItem) {
       selectedItem.setSelected(false)
@@ -73,8 +123,8 @@ class TreeItemView extends HTMLElement {
     }
 
     // Title element
-    this.titleElement = document.createElement('span')
-    this.titleElement.className = 'TreeNodesListItem__Title'
+    this.titleElement = document.createElement('div')
+    this.titleElement.className = 'TreeItemName'
     this.titleElement.addEventListener('click', (e) => {
       if (!this.appData || !this.appData.selectionManager) {
         if (!this.treeItem.isSelected()) {
@@ -96,6 +146,11 @@ class TreeItemView extends HTMLElement {
 
     this.itemHeader.appendChild(this.titleElement)
 
+    // Tooltip
+    this.tooltip = document.createElement('SPAN')
+    this.tooltip.className = 'tooltiptext'
+    this.itemHeader.appendChild(this.tooltip)
+
     //
     shadowRoot.appendChild(this.itemContainer)
   }
@@ -108,14 +163,39 @@ class TreeItemView extends HTMLElement {
   setTreeItem(treeItem, appData) {
     this.treeItem = treeItem
 
-    this.appData = appData
+    let name
+    const displayNameParam = this.treeItem.getParameter('DisplayName')
+    if (displayNameParam) {
+      name = displayNameParam.getValue()
+    } else name = this.treeItem.getName()
+
+    if (
+      this.treeItem instanceof InstanceItem &&
+      this.treeItem.getNumChildren() == 1
+    ) {
+      const referenceItem = this.treeItem.getChild(0)
+      if (name == '') {
+        const displayNameParam = referenceItem.getParameter('DisplayName')
+        if (displayNameParam) {
+          name = displayNameParam.getValue()
+        } else name = referenceItem.getName()
+      }
+
+      this.titleElement.textContent = name
+
+      this.tooltip.textContent = `Instance of (${referenceItem.getClassName()})`
+    } else {
+      this.tooltip.textContent = `(${this.treeItem.getClassName()})`
+      this.titleElement.textContent = name
+    }
 
     // Name
-    this.titleElement.textContent = treeItem.getName()
     const updateName = () => {
       this.titleElement.textContent = treeItem.getName()
     }
     this.treeItem.on('nameChanged', updateName)
+
+    this.appData = appData
 
     // Selection
     this.updateSelectedId = this.treeItem.on(
@@ -146,17 +226,11 @@ class TreeItemView extends HTMLElement {
           visibleParam.setValue(!visibleParam.getValue())
         }
       })
-      this.updateVisibilityId = this.treeItem.on(
-        'visibilityChanged',
-        this.updateVisibility.bind(this)
-      )
+      this.treeItem.on('visibilityChanged', this.updateVisibility.bind(this))
       this.updateVisibility()
 
       // Highlights
-      this.updateHighlightId = this.treeItem.on(
-        'highlightChanged',
-        this.updateHighlight.bind(this)
-      )
+      this.treeItem.on('highlightChanged', this.updateHighlight.bind(this))
       this.updateHighlight()
 
       const numChildren = this.countChildren()
@@ -172,6 +246,10 @@ class TreeItemView extends HTMLElement {
         'childRemoved',
         this.childRemoved.bind(this)
       )
+    }
+
+    if (displayTreeComplexity) {
+      this.displayTreeWeight()
     }
   }
 
@@ -225,10 +303,34 @@ class TreeItemView extends HTMLElement {
     }
   }
 
+  /**
+   * Display the weight of this tree item against the weight of the entire tree.
+   */
+  displayTreeWeight() {
+    const weight = treeItemWeights[this.treeItem.getId()]
+
+    // Note: use a power curve so that the colors don't go black too fast.
+    const weightFract = Math.pow(weight / totalWeight, 0.25)
+    // console.log(weight, totalWeight, weightFract)
+    const bgColor = colorStart.lerp(colorEnd, weightFract)
+    this.titleElement.style.setProperty('background-color', bgColor.toHex())
+    this.tooltip.textContent = `(${weight}/${totalWeight})`
+
+    const children = this.treeItem.getChildren()
+    children.forEach((childItem, index) => {
+      const childTreeItemView = this.getChildByTreeItem(childItem)
+      if (childTreeItemView) childTreeItemView.displayTreeWeight()
+    })
+  }
+
+  /**
+   * Count the number of selectable children.
+   * @return {number} the number of selectable children.
+   */
   countChildren() {
     const children = this.treeItem.getChildren()
     let count = 0
-    children.forEach((childItem) => {
+    children.forEach((childItem, index) => {
       if (childItem instanceof TreeItem && childItem.isSelectable()) {
         count++
       }
@@ -245,7 +347,16 @@ class TreeItemView extends HTMLElement {
     this.expandBtn.innerHTML = '-'
 
     if (!this.childrenAlreadyCreated) {
-      const children = this.treeItem.getChildren()
+      let children
+      if (
+        this.treeItem instanceof InstanceItem &&
+        this.treeItem.getNumChildren() == 1
+      ) {
+        children = this.treeItem.getChild(0).getChildren()
+      } else {
+        children = this.treeItem.getChildren()
+      }
+
       children.forEach((childItem, index) => {
         if (childItem instanceof TreeItem && childItem.isSelectable()) {
           this.addChild(childItem, index)
@@ -294,7 +405,7 @@ class TreeItemView extends HTMLElement {
   }
 
   childRemoved(event) {
-    const { index } = event
+    const { childItem, index } = event
     if (this.expanded) {
       this.itemChildren.children[index].destroy()
       this.itemChildren.removeChild(this.itemChildren.children[index])
@@ -303,6 +414,14 @@ class TreeItemView extends HTMLElement {
 
   getChild(index) {
     return this.itemChildren.children[index]
+  }
+
+  getChildByTreeItem(treeItem) {
+    for (let i = 0; i < this.itemChildren.children.length; i++) {
+      if (this.itemChildren.children[i].treeItem == treeItem)
+        return this.itemChildren.children[i]
+    }
+    return null
   }
 
   /**
@@ -355,6 +474,8 @@ TreeItemView.css = `
     height: 24px;
     width: 20px;
     padding: 0;
+    background-color: #0000;
+    color: azure;
     outline: none;
     margin: 2px 0 0 0;
   }
@@ -383,31 +504,71 @@ TreeItemView.css = `
   .TreeNodeHeader {
     display: flex;
     margin: 0 auto;
+    color: azure;
+    
+    position: relative;
   }
-
-  .TreeNodesListItem__Title {
+  .TreeItemName {
     cursor: default;
     padding: 2px 4px;
     border-radius: 5px;
+    
   }
-
-  .TreeNodesListItem__Hover {
+  .TreeNodesListItem:hover {
+    background-color: #e1f5fe;
   }
-
   .TreeNodesListItem__Dragging {
+    background-color: #e1f5fe;
   }
-
-  .TreeNodesListItem--isSelected > .TreeNodeHeader > .TreeNodesListItem__Title {
+  .TreeNodesListItem--isSelected > .TreeNodeHeader > .TreeItemName {
+    // background-color: #76d2bb;
+    color: #3B3B3B;
   }
-
-  .TreeNodesListItem--isHidden > .TreeNodeHeader >  .TreeNodesListItem__Title {
+  .TreeNodesListItem--isHidden > .TreeNodeHeader >  .TreeItemName {
+    color: #9e9e9e;
   }
-
-  .TreeNodesListItem--isHighlighted > .TreeNodeHeader >  .TreeNodesListItem__Title {
+  .TreeNodesListItem--isHighlighted > .TreeNodeHeader >  .TreeItemName {
     // border-style: solid;
     // border-width: thin;
   }
-
+/* Tooltip text */
+.TreeNodeHeader .tooltiptext {
+  display: flex;
+  visibility: hidden;
+  background-color: #aaa;
+  color: #fff;
+  text-align: center;
+  padding: 2px 4px;
+  border-radius: 6px;
+  width: 200px;
+  height: 22px;
+  /* Position the tooltip text */
+  position: absolute;
+  z-index: 1000;
+  bottom: -125%;
+  left: 50%;
+  margin-top: -50px;
+  margin-left: -50px;
+  /* Fade in tooltip */
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+/* Tooltip arrow */
+.TreeNodeHeader .tooltiptext::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 90%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #555 transparent transparent transparent;
+}
+/* Show the tooltip text when you mouse over the tooltip container */
+.TreeNodeHeader:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
   `
 
 customElements.define('tree-item-view', TreeItemView)
@@ -430,10 +591,9 @@ class ZeaTreeView extends HTMLElement {
     const styleTag = document.createElement('style')
     styleTag.appendChild(
       document.createTextNode(`
-      .ZeaTreeView {
-        height: 200px;
-      }
-      `)
+    .ZeaTreeView {
+      height: 200px;
+    }`)
     )
     shadowRoot.appendChild(styleTag)
 
@@ -462,14 +622,32 @@ class ZeaTreeView extends HTMLElement {
   setTreeItem(treeItem, appData) {
     this.rootTreeItem = treeItem
     this.appData = appData
+
+    // calculate the weight of the entire tree before displaying.
+    if (displayTreeComplexity) {
+      rootTreeItemView = this.treeItemView
+      totalWeight = calcTreeWeight(this.rootTreeItem)
+    }
+
     this.treeItemView.setTreeItem(treeItem, appData)
+
+    if (this.appData && this.appData.selectionManager) {
+      this.appData.selectionManager.on('selectionChanged', (event) => {
+        const { selection } = event
+        this.expandSelection(selection, true)
+      })
+    }
   }
 
-  __onMouseEnter() {
+  setDebugTreeComplexityMode() {
+    displayTreeComplexity = true
+  }
+
+  __onMouseEnter(event) {
     this.mouseOver = true
   }
 
-  __onMouseLeave() {
+  __onMouseLeave(event) {
     this.mouseOver = false
   }
 
@@ -542,6 +720,8 @@ class ZeaTreeView extends HTMLElement {
       // const selectedItems = selectionManager.getSelection()
       const newSelection = new Set()
       Array.from(selectedItems).forEach((item) => {
+        if (!item.getOwner()) return
+
         const index = item.getOwner().getChildIndex(item)
         if (index < item.getOwner().getNumChildren() - 1)
           newSelection.add(item.getOwner().getChild(index + 1))
@@ -574,10 +754,18 @@ class ZeaTreeView extends HTMLElement {
       }
       let treeViewItem = this.treeItemView
       path.forEach((item, index) => {
-        if (index < path.length - 1) {
-          if (!treeViewItem.expanded) treeViewItem.expand()
-          const childIndex = item.getChildIndex(path[index + 1])
-          treeViewItem = treeViewItem.getChild(childIndex)
+        if (index < path.length - 1 && treeViewItem) {
+          if (treeViewItem.treeItem != item) {
+            console.log(
+              'Invalid tree view structure:',
+              treeViewItem.treeItem.getName(),
+              item.getName()
+            )
+          }
+          if (!treeViewItem.expanded) {
+            treeViewItem.expand()
+          }
+          treeViewItem = treeViewItem.getChildByTreeItem(path[index + 1])
         }
       })
       // causes the element to be always at the top of the view.
@@ -592,3 +780,5 @@ class ZeaTreeView extends HTMLElement {
 }
 
 customElements.define('zea-tree-view', ZeaTreeView)
+
+// export default ZeaTreeView

@@ -4,13 +4,8 @@ const {
   GLRenderer,
   Vec3,
   Color,
-  Xfo,
-  Quat,
-  GeomItem,
-  Sphere,
-  Material,
-  Ray,
-  MathFunctions,
+
+  InstanceItem,
 } = window.zeaEngine
 const { CADAsset, CADBody, PMIItem } = zeaCad
 const { SelectionManager } = zeaUx
@@ -58,4 +53,59 @@ export function main() {
 
   // load mode
   loadZCADAsset('data/HC_SRO4.zcad')
+
+  const highlightColor = new Color('#F9CE03')
+  highlightColor.a = 0.1
+  const filterItem = (item) => {
+    while (item && !(item instanceof CADBody) && !(item instanceof PMIItem)) {
+      item = item.getOwner()
+    }
+    if (item.getOwner() instanceof InstanceItem) {
+      item = item.getOwner()
+    }
+    return item
+  }
+  renderer.getViewport().on('pointerDown', (event) => {
+    if (event.intersectionData) {
+      const geomItem = filterItem(event.intersectionData.geomItem)
+      if (geomItem) {
+        console.log(geomItem.getPath())
+
+        const geom = event.intersectionData.geomItem.geomParam.value
+        console.log(
+          geom.getNumVertices(),
+          event.intersectionData.geomItem.geomIndex
+        )
+        let item = event.intersectionData.geomItem
+        while (item) {
+          const globalXfo = item.localXfoParam.value
+          console.log(item.getName(), globalXfo.sc.toString())
+          item = item.getOwner()
+        }
+      }
+    }
+  })
+
+  renderer.getViewport().on('pointerUp', (event) => {
+    // Detect a right click
+    if (event.button == 0 && event.intersectionData) {
+      // // if the selection tool is active then do nothing, as it will
+      // // handle single click selection.s
+      // const toolStack = toolManager.toolStack
+      // if (toolStack[toolStack.length - 1] == selectionTool) return
+
+      // To provide a simple selection when the SelectionTool is not activated,
+      // we toggle selection on the item that is selcted.
+      const item = filterItem(event.intersectionData.geomItem)
+      if (item) {
+        if (!event.shiftKey) {
+          selectionManager.toggleItemSelection(item, !event.ctrlKey)
+        } else {
+          const items = new Set()
+          items.add(item)
+          selectionManager.deselectItems(items)
+        }
+      }
+    }
+  })
 }

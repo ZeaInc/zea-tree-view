@@ -1,10 +1,8 @@
-//const { Color, TreeItem, InstanceItem } = window.zeaEngine
 import { Color, TreeItem, InstanceItem } from '@zeainc/zea-engine'
 // const { CADBody, PMIItem } = zeaCad
 
 // ////////////////////////////////////////
 // Provide a simple debug mode to enable debugging the tree view.
-let displayTreeComplexity = true
 const colorStart = new Color(0, 0, 0)
 const colorEnd = new Color(1, 0, 0)
 const treeItemWeights = {}
@@ -249,7 +247,7 @@ class TreeItemView extends HTMLElement {
       )
     }
 
-    if (displayTreeComplexity) {
+    if (appData.displayTreeComplexity) {
       this.displayTreeWeight()
     }
   }
@@ -611,6 +609,7 @@ class ZeaTreeView extends HTMLElement {
     this.__onMouseEnter = this.__onMouseEnter.bind(this)
     this.__onMouseLeave = this.__onMouseLeave.bind(this)
     document.addEventListener('keydown', this.__onKeyDown)
+
     this.addEventListener('mouseenter', this.__onMouseEnter)
     this.addEventListener('mouseleave', this.__onMouseLeave)
   }
@@ -623,9 +622,8 @@ class ZeaTreeView extends HTMLElement {
   setTreeItem(treeItem, appData) {
     this.rootTreeItem = treeItem
     this.appData = appData
-
     // calculate the weight of the entire tree before displaying.
-    if (displayTreeComplexity) {
+    if (appData.displayTreeComplexity) {
       rootTreeItemView = this.treeItemView
       totalWeight = calcTreeWeight(this.rootTreeItem)
     }
@@ -640,9 +638,13 @@ class ZeaTreeView extends HTMLElement {
     }
   }
 
-  setDebugTreeComplexityMode() {
-    displayTreeComplexity = true
-  }
+  // setDebugTreeComplexityMode() {
+  //   if (!appData.displayTreeComplexity) {
+  //     appData.displayTreeComplexity = true
+  //   } else {
+  //     appData.displayTreeComplexity = !appData.displayTreeComplexity
+  //   }
+  // }
 
   __onMouseEnter(event) {
     this.mouseOver = true

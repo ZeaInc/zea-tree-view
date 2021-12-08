@@ -48,6 +48,7 @@ export function main() {
     scene,
     renderer,
     selectionManager,
+    displayTreeComplexity: true,
   })
 
   // load mode

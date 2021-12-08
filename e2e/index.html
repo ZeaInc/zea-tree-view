@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <!-- download Zea Engine -- this downloads the latest build from version 3 of the engine -->
+
+  <!DOCTYPE html>
+  <html class="h-full">
+    <head>
+      <title>Zea Tree View e2e test</title>
+
+      <meta charset="UTF-8" />
+      <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.9/tailwind.min.css"
+      />
+      <link rel="stylesheet" href="./styles.css" />
+      <script src="https://cdn.jsdelivr.net/npm/@zeainc/zea-engine@4.0.2-strict.2/dist/index.umd.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@zeainc/zea-cad@4.0.2-next.2/dist/index.umd.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@zeainc/zea-ux@4.0.2-next.0/dist/index.umd.js"></script>
+      <script crossorigin src="../dist/zea-tree-view.umd.js"></script>
+    </head>
+
+    <body class="overflow-hidden h-full">
+      <div class="h-full flex flex-col">
+        <main class="flex flex-col flex-1">
+          <div class="flex-1" id="topPanel">
+            <div class="splitter">
+              <div id="leftPanel">
+                <zea-tree-view
+                  id="tree"
+                  class="select-none"
+                ></zea-tree-view>
+              </div>
+              <div class="separator" id="separatorV"></div>
+              <div id="mainPanel" class="flex-1">
+                <div id="canvas-holder">
+                  <canvas id="canvas" > </canvas>
+                </div>
+       
+            </div>
+          </div>
+
+        </main>
+
+      </div>
+
+        <script type="module">
+          import { main } from './main.js'
+          main() // modify this function in main.js
+        </script>
+
+    </body>
+  </html>
+</html>

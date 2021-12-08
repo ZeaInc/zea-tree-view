@@ -1,12 +1,6 @@
 // Zea Engine dependencies stored in new const variables. View the API to see what you can include and use.
-const {
-  Scene,
-  GLRenderer,
-  Vec3,
-  Color,
-
-  InstanceItem,
-} = window.zeaEngine
+const { Scene, GLRenderer, Vec3, Color, EnvMap, InstanceItem } =
+  window.zeaEngine
 const { CADAsset, CADBody, PMIItem } = zeaCad
 const { SelectionManager } = zeaUx
 
@@ -30,6 +24,11 @@ export function main() {
   const camera = renderer.getViewport().getCamera()
   camera.setPositionAndTarget(new Vec3(6, 6, 5), new Vec3(0, 0, 1.5))
   scene.setupGrid(10, 10)
+
+  // use environment map for lighting
+  const envMap = new EnvMap()
+  envMap.load('data/StudioG.zenv')
+  scene.setEnvMap(envMap)
 
   const appData = {
     scene,

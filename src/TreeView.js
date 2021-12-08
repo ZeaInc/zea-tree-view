@@ -225,7 +225,7 @@ class TreeItemView extends HTMLElement {
           visibleParam.setValue(!visibleParam.getValue())
         }
       })
-      
+
       this.updateVisibilityId = this.treeItem.on(
         'visibilityChanged',
         this.updateVisibility.bind(this)
@@ -711,10 +711,12 @@ class ZeaTreeView extends HTMLElement {
       // const selectedItems = selectionManager.getSelection()
       const newSelection = new Set()
       Array.from(selectedItems).forEach((item) => {
-        const index = item.getOwner().getChildIndex(item)
-        if (index == 0) newSelection.add(item.getOwner())
+        const owner = item.getOwner()
+        if (!owner) return
+        const index = owner.getChildIndex(item)
+        if (index == 0) newSelection.add(owner)
         else {
-          newSelection.add(item.getOwner().getChild(index - 1))
+          newSelection.add(owner.getChild(index - 1))
         }
       })
       if (newSelection.size > 0) {

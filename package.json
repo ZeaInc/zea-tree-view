@@ -1,6 +1,6 @@
 {
   "name": "@zeainc/zea-tree-view",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "main": "dist/zea-tree-view.cjs.js",
   "module": "dist/zea-tree-view.esm.js",
   "browser": "dist/zea-tree-view.umd.js",

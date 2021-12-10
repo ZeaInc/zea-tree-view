@@ -21,9 +21,10 @@ While there are many tree views out there that have nice features, there are som
 
 # Templates using the zea-tree-view
 Zea provides a few template applications that you can use as a foundation to build your own applications. These templates use the zea-tree-view custom element to display
-https://github.com/ZeaInc/zea-react-template
-https://github.com/ZeaInc/zea-svelte-template
-https://github.com/ZeaInc/minimal-zea-viewer
+
+* https://github.com/ZeaInc/zea-react-template
+* https://github.com/ZeaInc/zea-svelte-template
+* https://github.com/ZeaInc/minimal-zea-viewer
 
 For more information on custom elements, and how compatible your chosen framework is with custom elements, the following page provides a great breakdown.
 https://custom-elements-everywhere.com/

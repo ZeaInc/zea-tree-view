@@ -48,8 +48,9 @@ main {
 }
 
 #leftPanel {
+  color: whitesmoke;
   overflow: auto;
-  width: 250px;
+  width: 600px;
   min-width: 10px;
 }
 

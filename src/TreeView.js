@@ -607,39 +607,45 @@ class ZeaTreeView extends HTMLElement {
         button {
           background: none;
           border: none;
+          color: var(--zea-tree-button-text-color, black);
           margin-right: 5px;
           width: 20px;
         }
 
         button:hover {
-          background: silver;
+          background-color: var(--zea-tree-button-bg-color, silver);
           border-radius: 2px;
         }
 
         table {
-          border: 1px solid darkgray;
+          border: 1px solid var(--zea-tree-border-color, darkgray);
           border-collapse: collapse;
+          color: var(--zea-text-color-primary, white);
           width: 100%;
         }
 
-        tbody > tr {
-          background-color: gray;
+        tr {
+          background-color: var(--zea-tree-even-row-bg-color, gray);
         }
 
-        tbody > tr:hover {
-          background-color: slategray;
+        tr:hover {
+          background-color: var(--zea-tree-hover-row-bg-color, slategray);
         }
 
-        tbody > tr:nth-child(odd) {
-          background-color: dimgray;
+        tr:nth-child(odd) {
+          background-color: var(--zea-tree-odd-row-bg-color, dimgray);
         }
 
-        tbody > tr:nth-child(odd):hover {
-          background-color: slategray;
+        tr:nth-child(odd):hover {
+          background-color: var(, slategray);
+        }
+
+        th {
+          background-color: var(--zea-tree-header-color, gray)
         }
 
         th, td {
-          border-right: 1px solid darkgray;
+          border-right: 1px solid var(--zea-tree-border-color, darkgray);
         }
       `)
     )

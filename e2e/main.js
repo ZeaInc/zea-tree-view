@@ -1,25 +1,36 @@
-// Zea Engine dependencies stored in new const variables. View the API to see what you can include and use.
+// Zea Engine dependencies stored in new const variables.
+// View the API to see what you can include and use.
 const { Scene, GLRenderer, Vec3, Color, EnvMap, InstanceItem } =
   window.zeaEngine
 const { CADAsset, CADBody, PMIItem } = zeaCad
 const { SelectionManager } = zeaUx
 
-function loadZCADAsset(filepath) {
+// Global variables.
+const scene = new Scene()
+const canvas = document.getElementById('canvas')
+const renderer = new GLRenderer(canvas)
+
+/**
+ * Load model.
+ */
+const loadZCADAsset = async (filepath) => {
   const asset = new CADAsset()
-  asset.load(filepath).then(() => {
-    renderer.frameAll()
-  })
+
+  await asset.load(filepath)
+
   asset.getGeometryLibrary().on('loaded', () => {
     postMessage('done-loading')
   })
+
   scene.getRoot().addChild(asset)
+
+  renderer.frameAll()
 }
 
-// global variables
-const scene = new Scene()
-const renderer = new GLRenderer(document.getElementById('canvas'))
-
-export function main() {
+/**
+ * Starting point.
+ */
+const main = async () => {
   renderer.setScene(scene)
   const camera = renderer.getViewport().getCamera()
   camera.setPositionAndTarget(new Vec3(6, 6, 5), new Vec3(0, 0, 1.5))
@@ -42,20 +53,47 @@ export function main() {
   })
   appData.selectionManager = selectionManager
 
-  // Setup TreeView Display
-  const treeElement = document.getElementById('tree')
-  treeElement.setTreeItem(scene.getRoot(), {
-    scene,
-    renderer,
-    selectionManager,
-    displayTreeComplexity: true,
-  })
+  // Load model.
+  loadZCADAsset('data/HC_SRO4.zcad').then(() => {
+    // Setup tree view.
+    const treeElement = document.getElementById('tree')
 
-  // load mode
-  loadZCADAsset('data/HC_SRO4.zcad')
+    treeElement.setTreeItem(scene.getRoot(), {
+      scene,
+      renderer,
+      selectionManager,
+      displayTreeComplexity: true,
+    })
+
+    const columns = [
+      { title: 'Revision', paramName: 'rev' },
+      { title: 'Description', paramName: 'description' },
+    ]
+
+    treeElement.setColumns(columns)
+
+    // Setup tree view2.
+    const treeElement2 = document.getElementById('tree2')
+
+    treeElement2.setTreeItem(scene.getRoot(), {
+      scene,
+      renderer,
+      selectionManager,
+      displayTreeComplexity: true,
+    })
+
+    const columns2 = [
+      { title: 'Cat', paramName: 'cat' },
+      { title: 'Dog', paramName: 'dog' },
+      { title: 'Mouse', paramName: 'mouse' },
+    ]
+
+    treeElement2.setColumns(columns2)
+  })
 
   const highlightColor = new Color('#F9CE03')
   highlightColor.a = 0.1
+
   const filterItem = (item) => {
     while (item && !(item instanceof CADBody) && !(item instanceof PMIItem)) {
       item = item.getOwner()
@@ -65,9 +103,11 @@ export function main() {
     }
     return item
   }
+
   renderer.getViewport().on('pointerDown', (event) => {
     if (event.intersectionData) {
       const geomItem = filterItem(event.intersectionData.geomItem)
+
       if (geomItem) {
         console.log(geomItem.getPath())
 
@@ -109,3 +149,5 @@ export function main() {
     }
   })
 }
+
+export { main }

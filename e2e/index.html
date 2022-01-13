@@ -10,7 +10,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@zeainc/zea-engine@next/dist/index.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@zeainc/zea-cad@next/dist/index.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@zeainc/zea-ux@next/dist/index.umd.js"></script>
-    <script crossorigin src="../dist/zea-tree-view.umd.js"></script>
+    <script
+      crossorigin
+      src="../dist/zeatreeview.umd.production.min.js"
+    ></script>
 
     <!--
       See:
@@ -20,25 +23,19 @@
   </head>
 
   <body class="overflow-hidden h-full">
-    <div class="h-full flex flex-col">
-      <main class="flex flex-col flex-1">
-        <div class="flex-1" id="topPanel">
-          <div class="splitter">
-            <div id="leftPanel">
-              <h2 class="text-amber-400">Tree 1</h2>
-              <zea-tree-view id="tree" class="select-none"></zea-tree-view>
-              <h2 class="text-amber-400 mt-8">Tree 2</h2>
-              <zea-tree-view id="tree2" class="select-none"></zea-tree-view>
-            </div>
-            <div class="separator" id="separatorV"></div>
-            <div id="mainPanel" class="flex-1">
-              <div id="canvas-holder">
-                <canvas id="canvas"></canvas>
-              </div>
-            </div>
-          </div>
+    <div class="splitter">
+      <div id="leftPanel">
+        <h2 class="text-amber-400">Tree 1</h2>
+        <zea-tree-view id="tree" class="select-none"></zea-tree-view>
+        <h2 class="text-amber-400 mt-8">Tree 2</h2>
+        <zea-tree-view id="tree2" class="select-none"></zea-tree-view>
+      </div>
+      <div class="separator" id="separatorV"></div>
+      <div id="mainPanel" class="flex-1">
+        <div id="canvas-holder">
+          <canvas id="canvas"></canvas>
         </div>
-      </main>
+      </div>
     </div>
 
     <script type="module">

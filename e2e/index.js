@@ -1,9 +1,15 @@
 // Zea Engine dependencies stored in new const variables.
 // View the API to see what you can include and use.
-const { Scene, GLRenderer, Vec3, Color, EnvMap, InstanceItem } =
-  window.zeaEngine
-const { CADAsset, CADBody, PMIItem } = zeaCad
-const { SelectionManager } = zeaUx
+const {
+  Scene,
+  GLRenderer,
+  Vec3,
+  Color,
+  EnvMap,
+  InstanceItem
+} = window.zeaEngine
+const { CADAsset, CADBody, PMIItem } = window.zeaCad
+const { SelectionManager } = window.zeaUx
 
 // Global variables.
 const scene = new Scene()
@@ -13,7 +19,7 @@ const renderer = new GLRenderer(canvas)
 /**
  * Load model.
  */
-const loadZCADAsset = async (filepath) => {
+const loadZCADAsset = async filepath => {
   const asset = new CADAsset()
 
   await asset.load(filepath)
@@ -43,34 +49,34 @@ const main = async () => {
 
   const appData = {
     scene,
-    renderer,
+    renderer
   }
 
   // Setup FPS Display
   const selectionManager = new SelectionManager(appData, {
     selectionOutlineColor: new Color(1, 1, 0.2, 0.1),
-    branchSelectionOutlineColor: new Color(1, 1, 0.2, 0.1),
+    branchSelectionOutlineColor: new Color(1, 1, 0.2, 0.1)
   })
   appData.selectionManager = selectionManager
 
   // Load model.
   loadZCADAsset('data/HC_SRO4.zcad').then(() => {
     // Setup tree view.
-    const treeElement = document.getElementById('tree')
+    const $tree = document.getElementById('tree')
 
-    treeElement.setTreeItem(scene.getRoot(), {
+    $tree.setTreeItem(scene.getRoot(), {
       scene,
       renderer,
       selectionManager,
-      displayTreeComplexity: true,
+      displayTreeComplexity: true
     })
 
     const columns = [
       { title: 'Revision', paramName: 'rev' },
-      { title: 'Description', paramName: 'description' },
+      { title: 'Description', paramName: 'description' }
     ]
 
-    treeElement.setColumns(columns)
+    $tree.setColumns(columns)
 
     // Setup tree view2.
     const treeElement2 = document.getElementById('tree2')
@@ -79,13 +85,13 @@ const main = async () => {
       scene,
       renderer,
       selectionManager,
-      displayTreeComplexity: true,
+      displayTreeComplexity: true
     })
 
     const columns2 = [
       { title: 'Cat', paramName: 'cat' },
       { title: 'Dog', paramName: 'dog' },
-      { title: 'Mouse', paramName: 'mouse' },
+      { title: 'Mouse', paramName: 'mouse' }
     ]
 
     treeElement2.setColumns(columns2)
@@ -94,7 +100,7 @@ const main = async () => {
   const highlightColor = new Color('#F9CE03')
   highlightColor.a = 0.1
 
-  const filterItem = (item) => {
+  const filterItem = item => {
     while (item && !(item instanceof CADBody) && !(item instanceof PMIItem)) {
       item = item.getOwner()
     }
@@ -104,7 +110,7 @@ const main = async () => {
     return item
   }
 
-  renderer.getViewport().on('pointerDown', (event) => {
+  renderer.getViewport().on('pointerDown', event => {
     if (event.intersectionData) {
       const geomItem = filterItem(event.intersectionData.geomItem)
 
@@ -126,7 +132,7 @@ const main = async () => {
     }
   })
 
-  renderer.getViewport().on('pointerUp', (event) => {
+  renderer.getViewport().on('pointerUp', event => {
     // Detect a right click
     if (event.button == 0 && event.intersectionData) {
       // // if the selection tool is active then do nothing, as it will

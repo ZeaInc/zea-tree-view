@@ -1,0 +1,11 @@
+session_name: tree-view
+suppress_history: false
+windows:
+  - panes:
+      - yarn run start
+  - panes:
+      - ${EDITOR} -S
+  - panes:
+      - shell_command:
+          - git fetch
+          - git status

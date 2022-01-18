@@ -722,12 +722,18 @@ class ZeaTreeView extends HTMLElement {
     // this.addEventListener('mouseleave', this.__onMouseLeave)
   }
 
+  /**
+   * Set the table's columns.
+   */
   setColumns(columns: Column[]) {
     this.columns = columns
     this.renderTable()
   }
 
-  isItemExpanded(item: TreeItem) {
+  /**
+   * Check whether an item is expanded.
+   */
+  private isItemExpanded(item: TreeItem) {
     const itemId = item.getId()
 
     if (this.expandedItemsTracker[itemId]) {
@@ -739,7 +745,10 @@ class ZeaTreeView extends HTMLElement {
     return false
   }
 
-  toggleItem(item: TreeItem) {
+  /**
+   * Toggle an item's expanded or collapsed state.
+   */
+  private toggleItem(item: TreeItem) {
     const itemId = item.getId()
     const isExpanded = this.isItemExpanded(item)
     this.expandedItemsTracker[itemId] = !isExpanded
@@ -893,8 +902,8 @@ class ZeaTreeView extends HTMLElement {
 
   /**
    * Set tree item.
-   * @param {object} treeItem Tree item.
-   * @param {object} appData App data.
+   * @param {object} treeItem - Tree item.
+   * @param {object} appData - App data.
    */
   setTreeItem(treeItem: TreeItem) {
     this.rootTreeItem = treeItem

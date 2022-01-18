@@ -674,7 +674,7 @@ class ZeaTreeView extends HTMLElement {
         }
 
         tr:nth-child(odd):hover {
-          background-color: var(, slategray);
+          background-color: var(--zea-tree-hover-row-bg-color, slategray);
         }
 
         th {

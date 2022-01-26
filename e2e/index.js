@@ -52,24 +52,17 @@ const main = async () => {
     renderer
   }
 
-  // Setup FPS Display
   const selectionManager = new SelectionManager(appData, {
-    selectionOutlineColor: new Color(1, 1, 0.2, 0.1),
-    branchSelectionOutlineColor: new Color(1, 1, 0.2, 0.1)
+    selectionOutlineColor: new Color(1, 1, 0, 0.1),
+    branchSelectionOutlineColor: new Color(1, 1, 0, 0.1)
   })
-  appData.selectionManager = selectionManager
 
   // Load model.
   loadZCADAsset('data/HC_SRO4.zcad').then(() => {
     // Setup tree view.
     const $tree = document.getElementById('tree')
-
-    $tree.setTreeItem(scene.getRoot(), {
-      scene,
-      renderer,
-      selectionManager,
-      displayTreeComplexity: true
-    })
+    $tree.setSelectionManager(selectionManager)
+    $tree.setTreeItem(scene.getRoot())
 
     const columns = [
       { title: 'Revision', paramName: 'rev' },
@@ -79,14 +72,9 @@ const main = async () => {
     $tree.setColumns(columns)
 
     // Setup tree view2.
-    const treeElement2 = document.getElementById('tree2')
-
-    treeElement2.setTreeItem(scene.getRoot(), {
-      scene,
-      renderer,
-      selectionManager,
-      displayTreeComplexity: true
-    })
+    const $tree2 = document.getElementById('tree2')
+    $tree2.setSelectionManager(selectionManager)
+    $tree2.setTreeItem(scene.getRoot())
 
     const columns2 = [
       { title: 'Cat', paramName: 'cat' },
@@ -94,11 +82,8 @@ const main = async () => {
       { title: 'Mouse', paramName: 'mouse' }
     ]
 
-    treeElement2.setColumns(columns2)
+    $tree2.setColumns(columns2)
   })
-
-  const highlightColor = new Color('#F9CE03')
-  highlightColor.a = 0.1
 
   const filterItem = item => {
     while (item && !(item instanceof CADBody) && !(item instanceof PMIItem)) {
@@ -111,48 +96,62 @@ const main = async () => {
   }
 
   renderer.getViewport().on('pointerDown', event => {
-    if (event.intersectionData) {
-      const geomItem = filterItem(event.intersectionData.geomItem)
+    if (!event.intersectionData) {
+      return
+    }
 
-      if (geomItem) {
-        console.log(geomItem.getPath())
+    const geomItem = filterItem(event.intersectionData.geomItem)
 
-        const geom = event.intersectionData.geomItem.geomParam.value
-        console.log(
-          geom.getNumVertices(),
-          event.intersectionData.geomItem.geomIndex
-        )
-        let item = event.intersectionData.geomItem
-        while (item) {
-          const globalXfo = item.localXfoParam.value
-          console.log(item.getName(), globalXfo.sc.toString())
-          item = item.getOwner()
-        }
-      }
+    if (!geomItem) {
+      return
+    }
+
+    // console.log('getPath:', geomItem.getPath())
+
+    const geom = event.intersectionData.geomItem.geomParam.value
+    // console.log(
+    //   'getNumVertices:',
+    //   geom.getNumVertices(),
+    //   'geomIndex:',
+    //   event.intersectionData.geomItem.geomIndex
+    // )
+    let item = event.intersectionData.geomItem
+    while (item) {
+      const globalXfo = item.localXfoParam.value
+      // console.log(item.getName(), globalXfo.sc.toString())
+      item = item.getOwner()
     }
   })
 
   renderer.getViewport().on('pointerUp', event => {
-    // Detect a right click
-    if (event.button == 0 && event.intersectionData) {
-      // // if the selection tool is active then do nothing, as it will
-      // // handle single click selection.s
-      // const toolStack = toolManager.toolStack
-      // if (toolStack[toolStack.length - 1] == selectionTool) return
+    const isLeftClick = event.button == 0 && event.intersectionData
 
-      // To provide a simple selection when the SelectionTool is not activated,
-      // we toggle selection on the item that is selcted.
-      const item = filterItem(event.intersectionData.geomItem)
-      if (item) {
-        if (!event.shiftKey) {
-          selectionManager.toggleItemSelection(item, !event.ctrlKey)
-        } else {
-          const items = new Set()
-          items.add(item)
-          selectionManager.deselectItems(items)
-        }
-      }
+    if (!isLeftClick) {
+      return
     }
+
+    // if the selection tool is active then do nothing, as it will
+    // handle single click selection.s
+    // const toolStack = toolManager.toolStack
+    // if (toolStack[toolStack.length - 1] == selectionTool) return
+
+    // To provide a simple selection when the SelectionTool is not activated,
+    // we toggle selection on the item that is selected.
+    const item = filterItem(event.intersectionData.geomItem)
+
+    if (!item) {
+      return
+    }
+
+    if (!event.shiftKey) {
+      selectionManager.toggleItemSelection(item, !event.ctrlKey)
+
+      return
+    }
+
+    const items = new Set()
+    items.add(item)
+    selectionManager.deselectItems(items)
   })
 }
 

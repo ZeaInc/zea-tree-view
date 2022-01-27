@@ -6,9 +6,11 @@ const {
   Vec3,
   Color,
   EnvMap,
-  InstanceItem
+  InstanceItem,
+  CADAsset,
+  CADBody,
+  PMIItem,
 } = window.zeaEngine
-const { CADAsset, CADBody, PMIItem } = window.zeaCad
 const { SelectionManager } = window.zeaUx
 
 // Global variables.
@@ -19,7 +21,7 @@ const renderer = new GLRenderer(canvas)
 /**
  * Load model.
  */
-const loadZCADAsset = async filepath => {
+const loadZCADAsset = async (filepath) => {
   const asset = new CADAsset()
 
   await asset.load(filepath)
@@ -49,43 +51,44 @@ const main = async () => {
 
   const appData = {
     scene,
-    renderer
+    renderer,
   }
 
   const selectionManager = new SelectionManager(appData, {
     selectionOutlineColor: new Color(1, 1, 0, 0.1),
-    branchSelectionOutlineColor: new Color(1, 1, 0, 0.1)
+    branchSelectionOutlineColor: new Color(1, 1, 0, 0.1),
   })
+
+  // {{{ Tree views.
+  const $tree = document.getElementById('tree')
+  $tree.setSelectionManager(selectionManager)
+  $tree.setTreeItem(scene.getRoot())
+
+  const columns = [
+    { title: 'Revision', paramName: 'rev' },
+    { title: 'Description', paramName: 'description' },
+  ]
+
+  $tree.setColumns(columns)
+
+  // Setup tree view2.
+  const $tree2 = document.getElementById('tree2')
+  $tree2.setSelectionManager(selectionManager)
+  $tree2.setTreeItem(scene.getRoot())
+
+  const columns2 = [
+    { title: 'Cat', paramName: 'cat' },
+    { title: 'Dog', paramName: 'dog' },
+    { title: 'Mouse', paramName: 'mouse' },
+  ]
+
+  $tree2.setColumns(columns2)
+  // }}} Tree views.
 
   // Load model.
-  loadZCADAsset('data/HC_SRO4.zcad').then(() => {
-    // Setup tree view.
-    const $tree = document.getElementById('tree')
-    $tree.setSelectionManager(selectionManager)
-    $tree.setTreeItem(scene.getRoot())
+  loadZCADAsset('data/HC_SRO4.zcad')
 
-    const columns = [
-      { title: 'Revision', paramName: 'rev' },
-      { title: 'Description', paramName: 'description' }
-    ]
-
-    $tree.setColumns(columns)
-
-    // Setup tree view2.
-    const $tree2 = document.getElementById('tree2')
-    $tree2.setSelectionManager(selectionManager)
-    $tree2.setTreeItem(scene.getRoot())
-
-    const columns2 = [
-      { title: 'Cat', paramName: 'cat' },
-      { title: 'Dog', paramName: 'dog' },
-      { title: 'Mouse', paramName: 'mouse' }
-    ]
-
-    $tree2.setColumns(columns2)
-  })
-
-  const filterItem = item => {
+  const filterItem = (item) => {
     while (item && !(item instanceof CADBody) && !(item instanceof PMIItem)) {
       item = item.getOwner()
     }
@@ -95,7 +98,7 @@ const main = async () => {
     return item
   }
 
-  renderer.getViewport().on('pointerDown', event => {
+  renderer.getViewport().on('pointerDown', (event) => {
     if (!event.intersectionData) {
       return
     }
@@ -123,7 +126,7 @@ const main = async () => {
     }
   })
 
-  renderer.getViewport().on('pointerUp', event => {
+  renderer.getViewport().on('pointerUp', (event) => {
     const isLeftClick = event.button == 0 && event.intersectionData
 
     if (!isLeftClick) {

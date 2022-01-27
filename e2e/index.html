@@ -1,46 +1,20 @@
 <!DOCTYPE html>
-<html class="h-full">
+<html lang="en">
   <head>
-    <title>Zea Tree View E2E Test</title>
-
     <meta charset="UTF-8" />
-
-    <link rel="stylesheet" href="./index.css" />
-
-    <script src="https://cdn.jsdelivr.net/npm/@zeainc/zea-engine@next/dist/index.umd.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@zeainc/zea-cad@next/dist/index.umd.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@zeainc/zea-ux@next/dist/index.umd.js"></script>
-    <script
-      crossorigin
-      src="../dist/zeatreeview.umd.production.min.js"
-    ></script>
-
-    <!--
-      See:
-      https://tailwindcss.com/docs/installation/play-cdn
-    -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title></title>
   </head>
-
-  <body class="overflow-hidden h-full">
-    <div class="splitter">
-      <div id="leftPanel">
-        <h2 class="text-amber-400">Tree 1</h2>
-        <zea-tree-view id="tree" class="select-none"></zea-tree-view>
-        <h2 class="text-amber-400 mt-8">Tree 2</h2>
-        <zea-tree-view id="tree2" class="select-none"></zea-tree-view>
-      </div>
-      <div class="separator" id="separatorV"></div>
-      <div id="mainPanel" class="flex-1">
-        <div id="canvas-holder">
-          <canvas id="canvas"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <script type="module">
-      import { main } from './index.js'
-      main()
-    </script>
+  <body>
+    <ul>
+      <li>
+        <a href="single.html">single.html</a>
+      </li>
+      <li>
+        <a href="double.html">double.html</a>
+      </li>
+      <li>
+        <a href="themed.html">themed.html</a>
+      </li>
+    </ul>
   </body>
 </html>

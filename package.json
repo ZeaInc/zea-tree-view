@@ -9,14 +9,17 @@
     "dist"
   ],
   "scripts": {
-    "start": "tsdx watch --format esm,umd --name zeaTreeView",
     "build": "tsdx build --format esm,umd --name zeaTreeView",
+    "dev": "tsdx watch --format esm,umd --name zeaTreeView",
+    "serve": "web-dev-server --watch --app-index e2e/index.html --open",
     "test": "tsdx test",
     "lint": "tsdx lint",
     "prepare": "yarn run build"
   },
   "devDependencies": {
+    "@web/dev-server": "^0.1.29",
     "husky": "^7.0.4",
+    "prettier": "^2.5.1",
     "tsdx": "^0.14.1",
     "tslib": "^2.3.1",
     "typescript": "^4.5.4"

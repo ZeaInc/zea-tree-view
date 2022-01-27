@@ -5,7 +5,7 @@
 
     <meta charset="UTF-8" />
 
-    <link rel="stylesheet" href="./themed.css" />
+    <link rel="stylesheet" href="./double.css" />
 
     <script src="https://cdn.jsdelivr.net/npm/@zeainc/zea-engine/dist/index.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@zeainc/zea-ux/dist/index.umd.js"></script>
@@ -26,6 +26,8 @@
       <div id="leftPanel">
         <h2 class="text-amber-400">Tree 1</h2>
         <zea-tree-view id="tree" class="select-none"></zea-tree-view>
+        <h2 class="text-amber-400 mt-8">Tree 2</h2>
+        <zea-tree-view id="tree2" class="select-none"></zea-tree-view>
       </div>
       <div class="separator" id="separatorV"></div>
       <div id="mainPanel" class="flex-1">
@@ -36,7 +38,7 @@
     </div>
 
     <script type="module">
-      import { main } from './themed.js'
+      import { main } from './double.js'
       main()
     </script>
   </body>

@@ -87,7 +87,7 @@ class ZeaTreeView extends HTMLElement {
   setSelectionManager(selectionManager: SelectionManager) {
     this.selectionManager = selectionManager
 
-    this.selectionManager.on('selectionChanged', event => {
+    this.selectionManager.on('selectionChanged', (event) => {
       const { selection: items } = event
 
       items.forEach((item: TreeItem) => {
@@ -209,12 +209,11 @@ class ZeaTreeView extends HTMLElement {
 
     const children = this.childrenOfItem(item)
 
-    children.forEach(child => {
+    children.forEach((child) => {
       this.setVisibilityOf(child, isVisible)
     })
-
-    this.renderTable()
   }
+
   /**
    * Render table.
    */
@@ -227,7 +226,7 @@ class ZeaTreeView extends HTMLElement {
     this.$tableWrapper.replaceChildren($table)
 
     const columnsHeaders = this.columns
-      .map(column => `<th>${column.title}</th>`)
+      .map((column) => `<th>${column.title}</th>`)
       .join('')
 
     $table.innerHTML = `
@@ -270,18 +269,17 @@ class ZeaTreeView extends HTMLElement {
 
   /**
    * Render visible items.
+   *
    * A visible item is an item whose parent is expanded.
    * The root item is visible by default.
    */
   private renderVisibleItems(treeItem = this.rootTreeItem, level = 0) {
-    const isExpanded = this.isItemExpanded(treeItem)
-    const isHilighted = treeItem?.isHighlighted()
-
     const $row = document.createElement('tr')
-    $row.addEventListener('click', event => {
+    $row.addEventListener('click', (event) => {
       const shouldNotReplace = event.ctrlKey || event.metaKey
       this.setSelection(treeItem, !shouldNotReplace)
     })
+    const isHilighted = treeItem?.isHighlighted()
     if (isHilighted) {
       const backgroundColor = treeItem?.getHighlight()
       $row.style.backgroundColor = backgroundColor?.toHex() || '#ffff00'
@@ -290,11 +288,13 @@ class ZeaTreeView extends HTMLElement {
 
     this.$tbody.appendChild($row)
 
+    const isExpanded = this.isItemExpanded(treeItem)
+
     const $toggleExpanded = document.createElement('button')
     $toggleExpanded.classList.add('toggle-expanded')
     $toggleExpanded.textContent = isExpanded ? '-' : '+'
     $toggleExpanded.style.marginLeft = `${level * 10}px`
-    $toggleExpanded.addEventListener('click', event => {
+    $toggleExpanded.addEventListener('click', (event) => {
       event.stopPropagation()
       this.toggleItemExpanded(treeItem)
     })
@@ -304,9 +304,10 @@ class ZeaTreeView extends HTMLElement {
     $toggleVisible.type = 'checkbox'
     const isVisible = treeItem?.isVisible() || false
     $toggleVisible.checked = isVisible
-    $toggleVisible.addEventListener('click', event => {
+    $toggleVisible.addEventListener('click', (event) => {
       event.stopPropagation()
       this.setVisibilityOf(treeItem, !isVisible)
+      this.renderTable()
     })
 
     const $cellForName = document.createElement('td')
@@ -316,7 +317,7 @@ class ZeaTreeView extends HTMLElement {
     $cellForName.appendChild($name)
     $row.appendChild($cellForName)
 
-    this.columns.forEach(column => {
+    this.columns.forEach((column) => {
       const { paramName } = column
 
       const $cell = document.createElement('td')
@@ -327,15 +328,22 @@ class ZeaTreeView extends HTMLElement {
       }
     })
 
+    treeItem?.on('childAdded', () => {
+      this.renderTable()
+    })
+
+    treeItem?.on('childRemoved', () => {
+      this.renderTable()
+    })
+
     if (!isExpanded) {
       return
     }
 
     const nextLevel = level + 1
-
     const children = this.childrenOfItem(treeItem)
 
-    children.forEach(child => {
+    children.forEach((child) => {
       if (this.shouldRenderItem(child)) {
         this.renderVisibleItems(child, nextLevel)
       }
@@ -423,7 +431,7 @@ class ZeaTreeView extends HTMLElement {
 
       const children = this.childrenOfItem(parent)
 
-      children.forEach(child => {
+      children.forEach((child) => {
         searchWithin(child)
       })
     }

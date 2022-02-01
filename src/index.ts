@@ -111,6 +111,10 @@ class ZeaTreeView extends HTMLElement {
    */
   private setStyles(): void {
     this.$styleTag.textContent = `
+      .invisible {
+        visibility: hidden;
+      }
+
       .toggle-expanded {
         background: none;
         border: none;
@@ -288,10 +292,16 @@ class ZeaTreeView extends HTMLElement {
 
     this.$tbody.appendChild($row)
 
+    const children = this.childrenOfItem(treeItem)
+
     const isExpanded = this.isItemExpanded(treeItem)
+    const hasChildren = children.length
 
     const $toggleExpanded = document.createElement('button')
     $toggleExpanded.classList.add('toggle-expanded')
+    if (!hasChildren) {
+      $toggleExpanded.classList.add('invisible')
+    }
     $toggleExpanded.textContent = isExpanded ? '-' : '+'
     $toggleExpanded.style.marginLeft = `${level * 10}px`
     $toggleExpanded.addEventListener('click', (event) => {
@@ -341,7 +351,6 @@ class ZeaTreeView extends HTMLElement {
     }
 
     const nextLevel = level + 1
-    const children = this.childrenOfItem(treeItem)
 
     children.forEach((child) => {
       if (this.shouldRenderItem(child)) {

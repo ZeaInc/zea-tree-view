@@ -2,7 +2,7 @@ session_name: tree-view
 suppress_history: false
 windows:
   - panes:
-      - yarn run start
+      - yarn run dev
   - panes:
       - ${EDITOR} -S
   - panes:

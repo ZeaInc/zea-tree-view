@@ -1,6 +1,6 @@
 {
   "name": "@zeainc/zea-tree-view",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "license": "MIT",
   "module": "dist/zeatreeview.esm.js",
   "browser": "dist/zeatreeview.umd.production.min.js",

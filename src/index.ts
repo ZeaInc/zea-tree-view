@@ -36,6 +36,7 @@ class ZeaTreeView extends HTMLElement {
     // Main wrapper.
     const $mainWrapper = document.createElement('div')
     $mainWrapper.className = 'ZeaTreeView'
+    $mainWrapper.style.height = '100%'
     this.shadowRoot?.appendChild($mainWrapper)
 
     // Search wrapper.
@@ -60,6 +61,8 @@ class ZeaTreeView extends HTMLElement {
 
     // Table wrapper.
     this.$tableWrapper.className = 'table-wrapper'
+    this.$tableWrapper.style.height = '100%'
+    this.$tableWrapper.style.overflow = 'auto'
     $mainWrapper.appendChild(this.$tableWrapper)
   }
 
@@ -243,6 +246,7 @@ class ZeaTreeView extends HTMLElement {
     `
 
     this.$tbody = document.createElement('tbody')
+    this.$tbody.style.whiteSpace = 'nowrap'
     $table.appendChild(this.$tbody)
 
     this.renderVisibleItems()

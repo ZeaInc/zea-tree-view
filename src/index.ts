@@ -1,5 +1,9 @@
 import { TreeItem, InstanceItem } from '@zeainc/zea-engine'
-import { SelectionManager } from '@zeainc/zea-ux'
+import {
+  SelectionManager,
+  UndoRedoManager,
+  ParameterValueChange,
+} from '@zeainc/zea-ux'
 
 interface ExpandedItemsTracker {
   [index: string]: boolean
@@ -96,8 +100,6 @@ class ZeaTreeView extends HTMLElement {
       items.forEach((item: TreeItem) => {
         this.expandAncestorsOf(item)
       })
-
-      this.renderTable()
     })
   }
 
@@ -212,13 +214,14 @@ class ZeaTreeView extends HTMLElement {
       return
     }
 
-    item.getParameter('Visible')?.setValue(isVisible)
+    const undoRedoManager = UndoRedoManager.getInstance()
 
-    const children = this.childrenOfItem(item)
-
-    children.forEach((child) => {
-      this.setVisibilityOf(child, isVisible)
-    })
+    if (undoRedoManager) {
+      const change = new ParameterValueChange(item.visibleParam, isVisible)
+      undoRedoManager.addChange(change)
+    } else {
+      item.visibleParam.value = isVisible
+    }
   }
 
   /**
@@ -342,13 +345,14 @@ class ZeaTreeView extends HTMLElement {
       }
     })
 
-    treeItem?.on('childAdded', () => {
+    const renderTable = () => {
       this.renderTable()
-    })
-
-    treeItem?.on('childRemoved', () => {
-      this.renderTable()
-    })
+    }
+    treeItem?.on('childAdded', renderTable)
+    treeItem?.on('childRemoved', renderTable)
+    treeItem?.on('visibilityChanged', renderTable)
+    treeItem?.on('nameChanged', renderTable)
+    treeItem?.on('highlightChanged', renderTable)
 
     if (!isExpanded) {
       return

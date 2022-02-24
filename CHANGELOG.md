@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.1](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.0...v0.1.1) (2022-02-24)
+
+
+### Features
+
+* add `undoRedoManager` ([2eebced](https://github.com/ZeaInc/zea-tree-view/commit/2eebcedfbb807cacc7d56d800cef34b497557b1a))
+
 ## [0.1.0](https://github.com/ZeaInc/zea-tree-view/compare/v0.0.8...v0.1.0) (2022-02-21)
 
 

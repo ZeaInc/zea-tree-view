@@ -1,4 +1,5 @@
 import { TreeItem, InstanceItem } from '@zeainc/zea-engine'
+// import type { ChildAddedEvent } from '@zeainc/zea-engine'
 import {
   SelectionManager,
   UndoRedoManager,
@@ -20,11 +21,17 @@ interface Column {
 class ZeaTreeView extends HTMLElement {
   private columns: Column[] = []
   private expandedItemsTracker: ExpandedItemsTracker = {}
-  private rootTreeItem: TreeItem | null = null
+  private rootTreeItem!: TreeItem
   private selectionManager: SelectionManager | null = null
+  private isSearching = false
+  // private isTheFirstRender = true
   private $styleTag = document.createElement('style')
   private $tableWrapper = document.createElement('div')
+  private $thead = document.createElement('thead')
   private $tbody = document.createElement('tbody')
+
+  private listenerIds: Record<number, Record<string, number>> = {}
+  private rows: Record<number, HTMLTableRowElement> = {}
 
   /**
    * Constructor.
@@ -39,8 +46,7 @@ class ZeaTreeView extends HTMLElement {
 
     // Main wrapper.
     const $mainWrapper = document.createElement('div')
-    $mainWrapper.className = 'ZeaTreeView'
-    $mainWrapper.style.height = '100%'
+    $mainWrapper.className = 'MainWrapper'
     this.shadowRoot?.appendChild($mainWrapper)
 
     // Search wrapper.
@@ -56,18 +62,20 @@ class ZeaTreeView extends HTMLElement {
       if (event.key === 'Enter') {
         this.search($inputSearch.value)
       }
+    })
+    $inputSearch.addEventListener('input', () => {
+      const isEmpty = $inputSearch.value === ''
 
-      if (event.key === 'Escape') {
-        this.rootTreeItem?.removeHighlight('selected', true)
+      if (isEmpty) {
+        this.clearSearch()
       }
     })
     $searchWrapper.appendChild($inputSearch)
 
     // Table wrapper.
     this.$tableWrapper.className = 'table-wrapper'
-    this.$tableWrapper.style.height = '100%'
-    this.$tableWrapper.style.overflow = 'auto'
     $mainWrapper.appendChild(this.$tableWrapper)
+    this.renderTable()
   }
 
   /**
@@ -78,7 +86,11 @@ class ZeaTreeView extends HTMLElement {
   setTreeItem(treeItem: TreeItem) {
     this.rootTreeItem = treeItem
 
-    this.renderTable()
+    this.expandedItemsTracker = {}
+
+    this.resetRows()
+
+    this.addRow(this.rootTreeItem)
   }
 
   /**
@@ -97,8 +109,12 @@ class ZeaTreeView extends HTMLElement {
     this.selectionManager.on('selectionChanged', (event) => {
       const { selection: items } = event
 
-      items.forEach((item: TreeItem) => {
-        this.expandAncestorsOf(item)
+      if (this.isSearching) {
+        return
+      }
+
+      items.forEach((treeItem: TreeItem) => {
+        this.expandAncestorsOf(treeItem)
       })
     })
   }
@@ -116,6 +132,12 @@ class ZeaTreeView extends HTMLElement {
    */
   private setStyles(): void {
     this.$styleTag.textContent = `
+      .MainWrapper {
+        --search-wrapper-height: 35px;
+
+        height: 100%;
+      }
+
       .invisible {
         visibility: hidden;
       }
@@ -137,7 +159,15 @@ class ZeaTreeView extends HTMLElement {
       }
 
       .search-wrapper {
+        box-sizing: border-box;
+        display: flex;
+        height: var(--search-wrapper-height);
         padding: 0.2rem;
+      }
+
+      .table-wrapper {
+        height: calc(100% - var(--search-wrapper-height));
+        overflow: auto;
       }
 
       .search {
@@ -154,12 +184,21 @@ class ZeaTreeView extends HTMLElement {
         width: 100%;
       }
 
+      thead {
+        position: sticky;
+        top: -1px;
+      }
+
       th {
         background-color: var(--zea-tree-header-color, gray)
       }
 
       th, td {
         border-right: 1px solid var(--zea-tree-border-color, darkgray);
+      }
+
+      tbody {
+        white-space: nowrap;
       }
 
       tr {
@@ -175,14 +214,10 @@ class ZeaTreeView extends HTMLElement {
   /**
    * Check whether an item is expanded.
    */
-  private isItemExpanded(item: TreeItem | null): boolean {
-    if (!item) {
-      return false
-    }
-
+  private isItemExpanded(item: TreeItem): boolean {
     const itemId = item.getId()
 
-    if (this.expandedItemsTracker[itemId]) {
+    if (itemId in this.expandedItemsTracker) {
       return this.expandedItemsTracker[itemId]
     }
 
@@ -194,32 +229,23 @@ class ZeaTreeView extends HTMLElement {
   /**
    * Toggle an item's expanded or collapsed state.
    */
-  private toggleItemExpanded(item: TreeItem | null): void {
-    if (!item) {
-      return
-    }
-
+  private toggleItemExpanded(item: TreeItem): boolean {
     const itemId = item.getId()
-    const isExpanded = this.isItemExpanded(item)
-    this.expandedItemsTracker[itemId] = !isExpanded
-
-    this.renderTable()
+    const isExpanded = !this.isItemExpanded(item)
+    this.expandedItemsTracker[itemId] = isExpanded
+    return isExpanded
   }
 
   /**
    * Toggle an item's visibility.
    */
-  private setVisibilityOf(item: TreeItem | null, isVisible: boolean): void {
-    if (!item) {
-      return
-    }
+  private setVisibilityOf(item: TreeItem, isVisible: boolean): void {
+    try {
+      const undoRedoManager = UndoRedoManager.getInstance()
 
-    const undoRedoManager = UndoRedoManager.getInstance()
-
-    if (undoRedoManager) {
       const change = new ParameterValueChange(item.visibleParam, isVisible)
       undoRedoManager.addChange(change)
-    } else {
+    } catch (error) {
       item.visibleParam.value = isVisible
     }
   }
@@ -239,98 +265,147 @@ class ZeaTreeView extends HTMLElement {
       .map((column) => `<th>${column.title}</th>`)
       .join('')
 
-    $table.innerHTML = `
-      <thead>
-        <tr>
-          <th>Name</th>
-          ${columnsHeaders}
-        </tr>
-      </thead>
+    // @ts-ignore
+    this.$thead.replaceChildren()
+
+    $table.appendChild(this.$thead)
+    const $headerRow: HTMLTableRowElement = document.createElement('tr')
+    this.$thead.appendChild($headerRow)
+    $headerRow.innerHTML = `
+      <th>Name</th>
+      ${columnsHeaders}
     `
 
     this.$tbody = document.createElement('tbody')
-    this.$tbody.style.whiteSpace = 'nowrap'
     $table.appendChild(this.$tbody)
-
-    this.renderVisibleItems()
   }
 
   /**
    * Set the current selected item.
    */
-  private setSelection = (treeItem: TreeItem | null, replace = true): void => {
-    if (!treeItem) {
-      return
-    }
-
+  private setSelection(treeItem: TreeItem, shouldReplace = true): void {
     if (!this.selectionManager) {
       return
     }
 
     if (this.selectionManager.pickingModeActive()) {
       this.selectionManager.pick(treeItem)
-
       return
     }
 
-    this.selectionManager.toggleItemSelection(treeItem, replace)
-
-    this.renderTable()
+    this.selectionManager.toggleItemSelection(treeItem, shouldReplace)
   }
 
   /**
-   * Render visible items.
-   *
-   * A visible item is an item whose parent is expanded.
-   * The root item is visible by default.
+   * Add row.
    */
-  private renderVisibleItems(treeItem = this.rootTreeItem, level = 0) {
+  private addRow(
+    treeItem: TreeItem,
+    index: number = -1,
+    $parentItemRow?: HTMLTableRowElement
+  ): void {
     const $row = document.createElement('tr')
+    // @ts-ignore
+    $row.treeItem = treeItem
+    $row.title = this.getTooltipFor(treeItem)
+    $row.tabIndex = 0
+
     $row.addEventListener('click', (event) => {
-      const shouldNotReplace = event.ctrlKey || event.metaKey
-      this.setSelection(treeItem, !shouldNotReplace)
+      const shouldReplace = !event.ctrlKey && !event.metaKey
+      this.setSelection(treeItem, shouldReplace)
     })
-    const isHilighted = treeItem?.isHighlighted()
-    if (isHilighted) {
-      const backgroundColor = treeItem?.getHighlight()
-      $row.style.backgroundColor = backgroundColor?.toHex() || '#ffff00'
-      $row.style.color = 'black'
+
+    $row.addEventListener('keydown', (event: KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowUp':
+          event.preventDefault()
+          const previousSibling = <HTMLTableRowElement>$row.previousSibling
+
+          if (!previousSibling) {
+            return
+          }
+
+          previousSibling.focus()
+          // @ts-ignore
+          this.setSelection(previousSibling?.treeItem)
+          break
+        case 'ArrowDown':
+          event.preventDefault()
+          const nextSibling = <HTMLTableRowElement>$row.nextSibling
+
+          if (!nextSibling) {
+            return
+          }
+
+          nextSibling.focus()
+          // @ts-ignore
+          this.setSelection(nextSibling.treeItem)
+          break
+        case 'ArrowRight':
+          event.preventDefault()
+          expandChildren()
+          break
+        case 'ArrowLeft':
+          event.preventDefault()
+          collapseChildren()
+          break
+      }
+    })
+
+    if ($parentItemRow) {
+      if (index >= 0) {
+        // Insert this row at the index provided
+        let step = 0
+        let $sibling = $parentItemRow
+        while (step < index) {
+          $sibling = <HTMLTableRowElement>$sibling.nextSibling
+          step += 1
+        }
+        this.insertAfter($sibling, $row)
+      } else {
+        this.insertAfter($parentItemRow, $row)
+      }
+    } else {
+      this.$tbody.appendChild($row)
     }
 
-    this.$tbody.appendChild($row)
+    const children = this.childrenOf(treeItem)
 
-    const children = this.childrenOfItem(treeItem)
-
-    const isExpanded = this.isItemExpanded(treeItem)
+    const isExpanded = !this.isSearching || this.isItemExpanded(treeItem)
     const hasChildren = children.length
 
     const $toggleExpanded = document.createElement('button')
     $toggleExpanded.classList.add('toggle-expanded')
-    if (!hasChildren) {
+    if (this.isSearching || !hasChildren) {
       $toggleExpanded.classList.add('invisible')
     }
     $toggleExpanded.textContent = isExpanded ? '-' : '+'
+    const level = treeItem.getPath().length - 1
     $toggleExpanded.style.marginLeft = `${level * 10}px`
     $toggleExpanded.addEventListener('click', (event) => {
       event.stopPropagation()
-      this.toggleItemExpanded(treeItem)
+      if (this.toggleItemExpanded(treeItem)) {
+        expandChildren()
+      } else {
+        collapseChildren()
+      }
     })
 
     const $toggleVisible = document.createElement('input')
     $toggleVisible.classList.add('toggle-visible')
     $toggleVisible.type = 'checkbox'
-    const isVisible = treeItem?.isVisible() || false
-    $toggleVisible.checked = isVisible
+
+    $toggleVisible.checked = treeItem.isVisible()
     $toggleVisible.addEventListener('click', (event) => {
       event.stopPropagation()
-      this.setVisibilityOf(treeItem, !isVisible)
-      this.renderTable()
+      this.setVisibilityOf(treeItem, !treeItem.isVisible())
     })
 
     const $cellForName = document.createElement('td')
     $cellForName.appendChild($toggleExpanded)
     $cellForName.appendChild($toggleVisible)
-    const $name = document.createTextNode(this.nameOfItem(treeItem))
+    const $name = document.createElement('span')
+    $name.textContent = this.nameOf(treeItem)
     $cellForName.appendChild($name)
     $row.appendChild($cellForName)
 
@@ -340,29 +415,132 @@ class ZeaTreeView extends HTMLElement {
       const $cell = document.createElement('td')
       $row.appendChild($cell)
 
-      if (treeItem?.hasParameter(paramName)) {
+      if (treeItem.hasParameter(paramName)) {
         $cell.textContent = treeItem.getParameter(paramName)?.getValue()
       }
     })
 
-    const renderTable = () => {
-      this.renderTable()
+    const listenerIds: Record<string, number> = {}
+    this.listenerIds[treeItem.getId()] = listenerIds
+
+    listenerIds['nameChanged'] = treeItem.on('nameChanged', (event: any) => {
+      // @ts-ignore
+      $name.textContent = event.newName
+    })
+
+    listenerIds['highlightChanged'] = treeItem.on('highlightChanged', () => {
+      setHighlight()
+    })
+
+    listenerIds['visibilityChanged'] = treeItem.on('visibilityChanged', () => {
+      $toggleVisible.checked = treeItem.isVisible()
+    })
+
+    listenerIds['childAdded'] = treeItem.on('childAdded', (event: object) => {
+      const isExpanded = this.isItemExpanded(treeItem)
+      if (isExpanded) {
+        // @ts-ignore
+        const index = event.index
+        // @ts-ignore
+        const childItem = event.childItem
+        this.addRow(childItem, index, $row)
+      } else {
+        $toggleExpanded.classList.remove('invisible')
+        $toggleExpanded.textContent = isExpanded ? '-' : '+'
+      }
+    })
+
+    listenerIds['childRemoved'] = treeItem.on(
+      'childRemoved',
+      (event: object) => {
+        const isExpanded = this.isItemExpanded(treeItem)
+        if (isExpanded) {
+          // @ts-ignore
+          const index = event.index
+          // @ts-ignore
+          const childItem = event.childItem
+          this.removeRow(childItem)
+        }
+      }
+    )
+
+    const setHighlight = () => {
+      const backgroundColor = treeItem.getHighlight()
+
+      if (backgroundColor) {
+        $row.style.outline = `solid ${backgroundColor.toHex()}`
+        return
+      }
+
+      $row.style.outline = 'none'
     }
-    treeItem?.on('childAdded', renderTable)
-    treeItem?.on('childRemoved', renderTable)
-    treeItem?.on('visibilityChanged', renderTable)
-    treeItem?.on('nameChanged', renderTable)
-    treeItem?.on('highlightChanged', renderTable)
 
-    if (!isExpanded) {
-      return
+    const isHighlighted = treeItem.isHighlighted()
+    if (isHighlighted) {
+      setHighlight()
     }
 
-    const nextLevel = level + 1
+    const expandChildren = () => {
+      const isExpanded = this.isItemExpanded(treeItem)
 
+      if (!isExpanded) {
+        return
+      }
+
+      for (let i = 0; i < children.length; i += 1) {
+        const child = children[i]
+
+        if (this.shouldRenderItem(child)) {
+          this.addRow(child, i, $row)
+        }
+      }
+    }
+
+    const collapseChildren = () => {
+      children.forEach((child) => {
+        if (this.shouldRenderItem(child)) {
+          this.removeRow(child)
+        }
+      })
+    }
+
+    // @ts-ignore
+    $row.expandChildren = expandChildren
+
+    this.rows[treeItem.getId()] = $row
+
+    if (isExpanded) {
+      expandChildren()
+    }
+  }
+
+  removeRow(treeItem: TreeItem) {
+    const $row = this.rows[treeItem.getId()]
+    if (!$row) return
+
+    delete this.rows[treeItem.getId()]
+    $row.parentElement?.removeChild($row)
+
+    const id = treeItem.getId()
+    const listenerIds = this.listenerIds[id]
+    delete this.listenerIds[id]
+
+    treeItem.removeListenerById('nameChanged', listenerIds['nameChanged'])
+    treeItem.removeListenerById(
+      'highlightChanged',
+      listenerIds['highlightChanged']
+    )
+    treeItem.removeListenerById(
+      'visibilityChanged',
+      listenerIds['visibilityChanged']
+    )
+    treeItem.removeListenerById('childAdded', listenerIds['childAdded'])
+    treeItem.removeListenerById('childRemoved', listenerIds['childRemoved'])
+
+    const children = this.childrenOf(treeItem)
     children.forEach((child) => {
       if (this.shouldRenderItem(child)) {
-        this.renderVisibleItems(child, nextLevel)
+        this.removeRow(child)
       }
     })
   }
@@ -371,7 +549,9 @@ class ZeaTreeView extends HTMLElement {
    * Determine whether an item should be rendered.
    */
   private shouldRenderItem(item: TreeItem): boolean {
-    const retval = item instanceof TreeItem && item.isSelectable()
+    // const retval = item instanceof TreeItem && item.isSelectable()
+    // FIXME
+    const retval = item ? true : false
 
     return retval
   }
@@ -379,15 +559,11 @@ class ZeaTreeView extends HTMLElement {
   /**
    * Get an item's children.
    */
-  private childrenOfItem(parent: TreeItem | null): TreeItem[] {
-    if (!parent) {
-      throw new Error('Missing parent.')
-    }
-
+  private childrenOf(treeItem: TreeItem): TreeItem[] {
     const retval =
-      parent instanceof InstanceItem && parent.getNumChildren() === 1
-        ? parent.getChild(0).getChildren()
-        : parent.getChildren()
+      treeItem instanceof InstanceItem && treeItem.getNumChildren() === 1
+        ? treeItem.getChild(0).getChildren()
+        : treeItem.getChildren()
 
     return retval
   }
@@ -395,58 +571,95 @@ class ZeaTreeView extends HTMLElement {
   /**
    * Get an item's name.
    */
-  private nameOfItem(item: TreeItem | null): string {
-    if (!item) {
-      throw new Error('Missing item.')
-    }
+  private nameOf(treeItem: TreeItem): string {
+    let name
 
-    const displayNameParam = item.getParameter('DisplayName')
+    const displayNameParam = treeItem.getParameter('DisplayName')
 
     if (displayNameParam) {
-      return displayNameParam.getValue()
+      name = displayNameParam.getValue()
+    } else {
+      name = treeItem.getName()
     }
 
-    return item.getName()
+    if (name == '') {
+      if (treeItem instanceof InstanceItem && treeItem.getNumChildren() == 1) {
+        const referenceItem = treeItem.getChild(0)
+        const displayNameParam = referenceItem.getParameter('DisplayName')
+        if (displayNameParam) {
+          name = displayNameParam.getValue()
+        } else {
+          name = referenceItem.getName()
+        }
+      }
+    }
+
+    return name
+  }
+
+  private getTooltipFor(treeItem: TreeItem): string {
+    if (treeItem instanceof InstanceItem && treeItem.getNumChildren() == 1) {
+      const referenceItem = treeItem.getChild(0)
+
+      return `Instance of (${referenceItem.getClassName()})`
+    } else {
+      return `(${treeItem.getClassName()})`
+    }
   }
 
   /**
    * Expand and item's ancestors.
    */
-  private expandAncestorsOf(item: TreeItem): void {
-    const parent = item.getParentItem()
+  private expandAncestorsOf(treeItem: TreeItem): void {
+    const parent = treeItem.getParentItem()
 
     if (!parent) {
       return
     }
 
+    const parentIsExpanded = this.isItemExpanded(parent)
+
+    if (parentIsExpanded) {
+      return
+    }
+
     const parentId = parent.getId()
-    this.expandedItemsTracker[parentId] = true
-    this.expandAncestorsOf(parent)
+
+    const $row = this.rows[parentId]
+
+    if ($row) {
+      // @ts-ignore
+      $row.expandChildren()
+    } else {
+      this.expandedItemsTracker[parentId] = true
+      this.expandAncestorsOf(parent)
+    }
   }
 
   /**
    * Perform search.
    */
   private search(value: string): void {
-    const lowerCaseValue = value.toLowerCase()
+    this.isSearching = true
 
-    this.rootTreeItem?.removeHighlight('selected', true)
+    // Clear the rows, then add rows for each item
+    this.resetRows()
 
-    this.expandedItemsTracker = {}
+    if (!this.rootTreeItem) return
 
-    const searchWithin = (parent: TreeItem | null) => {
-      if (!parent) {
-        return
+    this.rootTreeItem.removeHighlight('selected', true)
+
+    const searchResults: TreeItem[] = []
+
+    const searchWithin = (treeItem: TreeItem) => {
+      const treeItemName = this.nameOf(treeItem)
+
+      const lowerCaseValue = value.toLowerCase()
+      if (treeItemName.toLowerCase().includes(lowerCaseValue)) {
+        searchResults.push(treeItem)
       }
 
-      const parentName = this.nameOfItem(parent)
-
-      if (parentName.toLowerCase().includes(lowerCaseValue)) {
-        this.setSelection(parent, false)
-        this.expandAncestorsOf(parent)
-      }
-
-      const children = this.childrenOfItem(parent)
+      const children = this.childrenOf(treeItem)
 
       children.forEach((child) => {
         searchWithin(child)
@@ -455,7 +668,31 @@ class ZeaTreeView extends HTMLElement {
 
     searchWithin(this.rootTreeItem)
 
-    this.renderTable()
+    searchResults.forEach((treeItem, index) => {
+      this.addRow(treeItem, index)
+    })
+  }
+
+  /**
+   * Perform search.
+   */
+  private clearSearch(): void {
+    this.isSearching = false
+
+    this.resetRows()
+
+    this.addRow(this.rootTreeItem)
+  }
+
+  resetRows(): void {
+    Object.values(this.rows).forEach((row) => {
+      // @ts-ignore
+      this.removeRow(row.treeItem)
+    })
+  }
+
+  insertAfter(referenceNode: HTMLTableRowElement, newNode: HTMLElement) {
+    referenceNode.parentNode?.insertBefore(newNode, referenceNode.nextSibling)
   }
 }
 

@@ -16,25 +16,69 @@
       https://tailwindcss.com/docs/installation/play-cdn
     -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="./single.js"></script>
   </head>
 
   <body class="h-full">
     <div class="splitter h-full flex">
       <div id="leftPanel">
-        <h2 class="text-amber-400">Tree 1</h2>
         <zea-tree-view id="tree" class="select-none"></zea-tree-view>
       </div>
       <div class="separator" id="separatorV"></div>
       <div id="mainPanel" class="flex-1">
-        <div id="canvas-holder">
-          <canvas id="canvas"></canvas>
-        </div>
+        <ul class="space-y-2">
+          <li>
+            <button class="border border-2 border-zinc-600" id="selectItem">
+              Select item
+            </button>
+          </li>
+          <li>
+            <button class="border border-2 border-zinc-600" id="insertItem">
+              Insert item
+            </button>
+          </li>
+          <li>
+            <button class="border border-2 border-zinc-600" id="removeItem">
+              Remove item
+            </button>
+          </li>
+          <li>
+            <button class="border border-2 border-zinc-600" id="renameItem">
+              Rename item
+            </button>
+          </li>
+          <li>
+            <button
+              class="border border-2 border-zinc-600"
+              id="createUnnamedInstanceItem"
+            >
+              Create unnamed instance item
+            </button>
+          </li>
+          <li>
+            <button
+              class="border border-2 border-zinc-600"
+              id="createNamedInstanceItem"
+            >
+              Create named instance item
+            </button>
+          </li>
+          <li>
+            <input
+              class="border rounded"
+              id="newItemsCount"
+              type="number"
+              value="100"
+            />
+            <button
+              class="border border-2 border-zinc-600"
+              id="insertMultipleItems"
+            >
+              Insert multiple items
+            </button>
+          </li>
+        </ul>
       </div>
     </div>
-
-    <script type="module">
-      import { main } from './single.js'
-      main()
-    </script>
   </body>
 </html>

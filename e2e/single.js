@@ -1,148 +1,84 @@
-// Zea Engine dependencies stored in new const variables.
-// View the API to see what you can include and use.
-const {
-  Scene,
-  GLRenderer,
-  Vec3,
-  Color,
-  EnvMap,
-  InstanceItem,
-  CADAsset,
-  CADBody,
-  PMIItem,
-} = window.zeaEngine
+const { Scene, Color, CADAsset, TreeItem, InstanceItem } = window.zeaEngine
 const { SelectionManager } = window.zeaUx
 
-// Global variables.
 const scene = new Scene()
-const canvas = document.getElementById('canvas')
-const renderer = new GLRenderer(canvas)
 
-/**
- * Load model.
- */
-const loadZCADAsset = async (filepath) => {
-  const asset = new CADAsset()
-
-  await asset.load(filepath)
-
-  asset.getGeometryLibrary().on('loaded', () => {
-    postMessage('done-loading')
-  })
-
-  scene.getRoot().addChild(asset)
-
-  renderer.frameAll()
+const appData = {
+  scene,
 }
 
-/**
- * Starting point.
- */
-const main = async () => {
-  renderer.setScene(scene)
-  const camera = renderer.getViewport().getCamera()
-  camera.setPositionAndTarget(new Vec3(6, 6, 5), new Vec3(0, 0, 1.5))
-  scene.setupGrid(10, 10)
+const selectionManager = new SelectionManager(appData, {
+  selectionOutlineColor: new Color(1, 1, 0, 0.1),
+  branchSelectionOutlineColor: new Color(1, 1, 0, 0.1),
+})
 
-  // use environment map for lighting
-  const envMap = new EnvMap()
-  envMap.load('data/StudioG.zenv')
-  scene.setEnvMap(envMap)
+const columns = [
+  { title: 'Revision', paramName: 'rev' },
+  { title: 'Description', paramName: 'description' },
+]
 
-  const appData = {
-    scene,
-    renderer,
+const $tree = document.querySelector('#tree')
+$tree.setColumns(columns)
+$tree.setSelectionManager(selectionManager)
+$tree.setTreeItem(scene.getRoot())
+
+document.querySelector('#selectItem').addEventListener('click', () => {
+  const treeItem = scene.getRoot().getChild(0)
+  const set = new Set()
+  set.add(treeItem)
+  selectionManager.setSelection(set)
+})
+
+document.querySelector('#insertItem').addEventListener('click', () => {
+  const treeItem = new TreeItem('foo')
+  scene.getRoot().insertChild(treeItem, 0)
+})
+
+document.querySelector('#insertMultipleItems').addEventListener('click', () => {
+  const newItemsCount = parseInt(
+    document.querySelector('#newItemsCount').value,
+    10
+  )
+
+  for (i = 0; i < newItemsCount; i += 1) {
+    const treeItem = new TreeItem('Item')
+    scene.getRoot().insertChild(treeItem, i)
   }
+})
 
-  const selectionManager = new SelectionManager(appData, {
-    selectionOutlineColor: new Color(1, 1, 0, 0.1),
-    branchSelectionOutlineColor: new Color(1, 1, 0, 0.1),
+document.querySelector('#removeItem').addEventListener('click', () => {
+  scene.getRoot().removeChild(0)
+})
+
+document
+  .querySelector('#createUnnamedInstanceItem')
+  .addEventListener('click', () => {
+    const instanceItem = new InstanceItem('')
+    const referenceItem = new TreeItem('Some ref item')
+
+    referenceItem.addChild(new TreeItem('child 1'))
+    referenceItem.addChild(new TreeItem('child 2'))
+
+    instanceItem.addChild(referenceItem)
+
+    scene.getRoot().insertChild(instanceItem, 0)
   })
 
-  // {{{ Tree view.
-  const $tree = document.getElementById('tree')
-  $tree.setSelectionManager(selectionManager)
-  $tree.setTreeItem(scene.getRoot())
+document
+  .querySelector('#createNamedInstanceItem')
+  .addEventListener('click', () => {
+    const instanceItem = new InstanceItem('Some instance item')
+    const referenceItem = new TreeItem('Some ref item')
 
-  const columns = [
-    { title: 'Revision', paramName: 'rev' },
-    { title: 'Description', paramName: 'description' },
-  ]
+    referenceItem.addChild(new TreeItem('child 1'))
+    referenceItem.addChild(new TreeItem('child 2'))
 
-  $tree.setColumns(columns)
-  // }}} Tree view.
+    instanceItem.addChild(referenceItem)
 
-  // Load model.
-  loadZCADAsset('data/HC_SRO4.zcad')
-
-  const filterItem = (item) => {
-    while (item && !(item instanceof CADBody) && !(item instanceof PMIItem)) {
-      item = item.getOwner()
-    }
-    if (item.getOwner() instanceof InstanceItem) {
-      item = item.getOwner()
-    }
-    return item
-  }
-
-  renderer.getViewport().on('pointerDown', (event) => {
-    if (!event.intersectionData) {
-      return
-    }
-
-    const geomItem = filterItem(event.intersectionData.geomItem)
-
-    if (!geomItem) {
-      return
-    }
-
-    // console.log('getPath:', geomItem.getPath())
-
-    const geom = event.intersectionData.geomItem.geomParam.value
-    // console.log(
-    //   'getNumVertices:',
-    //   geom.getNumVertices(),
-    //   'geomIndex:',
-    //   event.intersectionData.geomItem.geomIndex
-    // )
-    let item = event.intersectionData.geomItem
-    while (item) {
-      const globalXfo = item.localXfoParam.value
-      // console.log(item.getName(), globalXfo.sc.toString())
-      item = item.getOwner()
-    }
+    scene.getRoot().insertChild(instanceItem, 0)
   })
 
-  renderer.getViewport().on('pointerUp', (event) => {
-    const isLeftClick = event.button == 0 && event.intersectionData
-
-    if (!isLeftClick) {
-      return
-    }
-
-    // if the selection tool is active then do nothing, as it will
-    // handle single click selection.s
-    // const toolStack = toolManager.toolStack
-    // if (toolStack[toolStack.length - 1] == selectionTool) return
-
-    // To provide a simple selection when the SelectionTool is not activated,
-    // we toggle selection on the item that is selected.
-    const item = filterItem(event.intersectionData.geomItem)
-
-    if (!item) {
-      return
-    }
-
-    if (!event.shiftKey) {
-      selectionManager.toggleItemSelection(item, !event.ctrlKey)
-
-      return
-    }
-
-    const items = new Set()
-    items.add(item)
-    selectionManager.deselectItems(items)
-  })
-}
-
-export { main }
+document.querySelector('#renameItem').addEventListener('click', () => {
+  const treeItem = scene.getRoot().getChild(0)
+  treeItem.setName('new name')
+})

@@ -1,13 +1,11 @@
 body {
   height: 100vh;
-  overflow: hidden;
   margin: 0em;
   background-color: #4d4d4d;
 }
 
 header {
   grid-area: header;
-  overflow: hidden;
   min-height: 40px;
 }
 main {
@@ -44,7 +42,6 @@ main {
 
 #leftPanel {
   color: whitesmoke;
-  overflow: auto;
   width: 600px;
   min-width: 10px;
 }

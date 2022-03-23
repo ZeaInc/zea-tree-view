@@ -76,7 +76,7 @@ You can press the Esc key to clear the search results.
 
 ### Multiple columns
 
-You can specify a dictionary of columns and the tree view will display the corresponding parameters for each tree item. Like this:
+You can specify an array of columns and the tree view will display the corresponding parameters for each tree item. Like this:
 
 ```javascript
 const $tree = document.querySelector('#tree')

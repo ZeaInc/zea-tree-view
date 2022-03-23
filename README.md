@@ -42,21 +42,6 @@ Most users will expect that the instance of a reference is displayed
 as a single item in the tree. The zea-tree-view has this logic built in, making
 it a simple drop in solution (see below for more details).
 
-### Debugging features
-
-The zea-tree-view component comes with some handy debugging features that help
-understand performance issues in large complex assemblies:
-
-- Tree Weight debugging: after loading a massive assembly, it can be useful to
-  understand the weight of the tree at each point to see where the complexity exists.
-  This can help isolate broken geometries, or know where to prune if you are struggling
-  to load your entire tree.
-  ![image](https://user-images.githubusercontent.com/840121/145586804-b19662c7-dac7-4df2-ada7-eadbb2886184.png)
-- Geometry weight debugging ([coming soon](https://github.com/ZeaInc/zea-tree-view/issues/14)):
-  The tree can also display the total number of points, lines, and triangles
-  displayed under a given node. This can help clarify the results of various
-  precision settings used in the production of ZCAD files.
-
 ### Keyboard navigation
 
 You can use the arrow keys to navigate the tree view:

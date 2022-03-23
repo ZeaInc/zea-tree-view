@@ -57,7 +57,7 @@ understand performance issues in large complex assemblies:
   displayed under a given node. This can help clarify the results of various
   precision settings used in the production of ZCAD files.
 
-### Search (coming soon)
+### Search
 
 Press the Esc key to clear the search highlights.
 

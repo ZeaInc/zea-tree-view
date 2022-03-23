@@ -59,7 +59,7 @@ understand performance issues in large complex assemblies:
 
 ### Keyboard navigation
 
-You can use the arrow keys to navigate the tree view, like this:
+You can use the arrow keys to navigate the tree view:
 
 - Up: select the previous item.
 - Down: select the next item.
@@ -70,11 +70,24 @@ You can use the arrow keys to navigate the tree view, like this:
 
 The image below demonstrates the results obtained after searching for the keyword "resistor".
 
-![search](./screenshots/search.png)
-
 You can press the Esc key to clear the search results.
 
-### Multiple columns (coming soon)
+![search](./screenshots/search.png)
+
+### Multiple columns
+
+You can specify a dictionary of columns and the tree view will display the corresponding parameters for each tree item. Like this:
+
+```javascript
+const $tree = document.querySelector('#tree')
+
+const columns = [
+  { title: 'Revision', paramName: 'rev' },
+  { title: 'Description', paramName: 'description' },
+]
+
+$tree.setColumns(columns)
+```
 
 ### Free and OpenSource
 

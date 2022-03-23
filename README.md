@@ -57,9 +57,37 @@ understand performance issues in large complex assemblies:
   displayed under a given node. This can help clarify the results of various
   precision settings used in the production of ZCAD files.
 
-### Search (coming soon)
+### Keyboard navigation
 
-### Multiple columns (coming soon)
+You can use the arrow keys to navigate the tree view:
+
+- Up: select the previous item.
+- Down: select the next item.
+- Right: expand the current item.
+- Left: collapse the current item.
+
+### Search
+
+The image below demonstrates the results obtained after searching for the keyword "resistor".
+
+You can press the Esc key to clear the search results.
+
+![search](./screenshots/search.png)
+
+### Multiple columns
+
+You can specify an array of columns and the tree view will display the corresponding parameters for each tree item. Like this:
+
+```javascript
+const $tree = document.querySelector('#tree')
+
+const columns = [
+  { title: 'Revision', paramName: 'rev' },
+  { title: 'Description', paramName: 'description' },
+]
+
+$tree.setColumns(columns)
+```
 
 ### Free and OpenSource
 

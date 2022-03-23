@@ -57,11 +57,22 @@ understand performance issues in large complex assemblies:
   displayed under a given node. This can help clarify the results of various
   precision settings used in the production of ZCAD files.
 
+### Keyboard navigation
+
+You can use the arrow keys to navigate the tree view, like this:
+
+- Up: select the previous item.
+- Down: select the next item.
+- Right: expand the current item.
+- Left: collapse the current item.
+
 ### Search
+
+The image below demonstrates the results obtained after searching for the keyword "resistor".
 
 ![search](./screenshots/search.png)
 
-Press the Esc key to clear the search highlights.
+You can press the Esc key to clear the search results.
 
 ### Multiple columns (coming soon)
 

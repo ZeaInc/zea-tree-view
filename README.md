@@ -59,6 +59,8 @@ understand performance issues in large complex assemblies:
 
 ### Search (coming soon)
 
+Press the Esc key to clear the search highlights.
+
 ### Multiple columns (coming soon)
 
 ### Free and OpenSource

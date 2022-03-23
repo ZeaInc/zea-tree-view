@@ -30,7 +30,7 @@ The zea-tree-view is implemented as an [Observer](https://en.wikipedia.org/wiki/
 of the `SceneTree`.
 All changes made to the scene tree (highlighting, selection changes,
 name changes, or any kind of tree structure manipulation) are instantly reflected
-in the tree. The data model, wich is the zea-engine `SceneTree` can be updated
+in the tree. The data model, which is the Zea Engine's `SceneTree`, can be updated
 by any other component in your application, and the tree view will react and update
 to reflect these changes.
 
@@ -47,14 +47,14 @@ it a simple drop in solution (see below for more details).
 The zea-tree-view component comes with some handy debugging features that help
 understand performance issues in large complex assemblies:
 
-- Tree Weight debugging: after loading a massive assembly, it can be usefull to
+- Tree Weight debugging: after loading a massive assembly, it can be useful to
   understand the weight of the tree at each point to see where the complexity exists.
   This can help isolate broken geometries, or know where to prune if you are struggling
   to load your entire tree.
   ![image](https://user-images.githubusercontent.com/840121/145586804-b19662c7-dac7-4df2-ada7-eadbb2886184.png)
 - Geometry weight debugging ([coming soon](https://github.com/ZeaInc/zea-tree-view/issues/14)):
   The tree can also display the total number of points, lines, and triangles
-  displayed under a given node. This can help clarrifly the results of various
+  displayed under a given node. This can help clarify the results of various
   precision settings used in the production of ZCAD files.
 
 ### Search (coming soon)
@@ -95,11 +95,11 @@ The name displayed in the tree view might not be the same as the name given to t
 `TreeItem` in the tree. The reason for this is that names in Zea Engine must be unique,
 while many CAD applications do not have this requirement.
 This issue only affects InstanceItems, because an multiple instances may be nested
-under a product or asssembly.
+under a product or assembly.
 Instances in most CAD applications may have no name at all, and therefore use the
 reference items name, or have non-unique names. The Zea Engine C++ SDK generates
 unique names while processing CAD assets, and assigns a `DisplayName` property if
-the name provided by the CAD SDK was not valid for one of the reasons liste above.
+the name provided by the CAD SDK was not valid for one of the reasons listed above.
 The zea-tree-view component should use the `DisplayName` if available instead of
 the provided name.
 See the following code for an example:
@@ -114,7 +114,7 @@ return item.getName()
 
 ### Determining the children to display under an InstanceItem
 
-The `InstanceItem` should be merged with its reference to provide a consisten tree
+The `InstanceItem` should be merged with its reference to provide a consistent tree
 view that users will recognize. To achieve this, when displaying the child items
 for an `InstanceItem`, the tree view should skip the reference item and display its
 children instead. The zea-tree-view does this as shown in the following code:

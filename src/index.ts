@@ -639,12 +639,11 @@ class ZeaTreeView extends HTMLElement {
     const parentId = parent.getId()
 
     const $row = this.rows[parentId]
-
+    this.expandedItemsTracker[parentId] = true
     if ($row) {
       // @ts-ignore
       $row.expandChildren()
     } else {
-      this.expandedItemsTracker[parentId] = true
       this.expandAncestorsOf(parent)
     }
   }

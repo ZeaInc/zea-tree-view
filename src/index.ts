@@ -161,6 +161,7 @@ class ZeaTreeView extends HTMLElement {
       .toggle-visible {
         margin: 0 5px;
       }
+
       .invisible-item {
         color: darkgrey;
       }
@@ -200,7 +201,7 @@ class ZeaTreeView extends HTMLElement {
         background-color: var(--zea-tree-header-color, gray)
       }
 
-      th, td {
+      th:not(:last-child), td:not(:last-child) {
         border-right: 1px solid var(--zea-tree-border-color, darkgray);
       }
 
@@ -210,6 +211,7 @@ class ZeaTreeView extends HTMLElement {
 
       tr {
         background-color: var(--zea-tree-even-row-bg-color, gray);
+        outline-offset: -1px;
       }
 
       tr:nth-child(odd) {
@@ -480,11 +482,14 @@ class ZeaTreeView extends HTMLElement {
       const backgroundColor = treeItem.getHighlight()
 
       if (backgroundColor) {
-        $row.style.outline = `solid ${backgroundColor.toHex()}`
+        $row.style.setProperty(
+          'outline',
+          `1px solid ${backgroundColor.toHex()}`
+        )
         return
       }
 
-      $row.style.outline = 'none'
+      $row.style.removeProperty('outline')
     }
 
     const isHighlighted = treeItem.isHighlighted()

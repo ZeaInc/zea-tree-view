@@ -34,6 +34,18 @@ document.querySelector('#insertItem').addEventListener('click', () => {
   scene.getRoot().insertChild(treeItem, 0)
 })
 
+const addChildren = (treeItem, childCount) => {
+  for (let i = 0; i < childCount; i++) {
+    treeItem.addChild(new TreeItem('child'))
+  }
+}
+document.querySelector('#buildTree').addEventListener('click', () => {
+  addChildren(scene.getRoot(), 4)
+  addChildren(scene.getRoot().getChild(0), 2)
+  addChildren(scene.getRoot().getChild(1), 4)
+  addChildren(scene.getRoot().getChild(2), 3)
+})
+
 document.querySelector('#insertMultipleItems').addEventListener('click', () => {
   const newItemsCount = parseInt(
     document.querySelector('#newItemsCount').value,

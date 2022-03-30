@@ -378,7 +378,7 @@ class ZeaTreeView extends HTMLElement {
 
     const children = this.childrenOf(treeItem)
 
-    const isExpanded = !this.isSearching || this.isItemExpanded(treeItem)
+    const isExpanded = this.isSearching ? false : this.isItemExpanded(treeItem)
     const hasChildren = children.length
 
     const $toggleExpanded = document.createElement('button')
@@ -439,7 +439,6 @@ class ZeaTreeView extends HTMLElement {
     listenerIds['highlightChanged'] = treeItem.on('highlightChanged', () => {
       setHighlight()
     })
-
 
     listenerIds['visibilityChanged'] = treeItem.on(
       'visibilityChanged',

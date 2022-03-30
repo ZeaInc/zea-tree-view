@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.3](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.2...v0.1.3) (2022-03-30)
+
+
+### Bug Fixes
+
+* cleaned up regression in tree item expansion ([d5c3776](https://github.com/ZeaInc/zea-tree-view/commit/d5c37760074130338fd8d0890ca5121369524099))
+* Expand button text is now correctly reflected. ([1d9390f](https://github.com/ZeaInc/zea-tree-view/commit/1d9390fce3f5d0de770da6ca752abf1756ed3168))
+* selected rows outlines ([9d3e5e6](https://github.com/ZeaInc/zea-tree-view/commit/9d3e5e6c9db69381c8b1a7c1ba8418809b00e39c))
+* Visibility checkbox now reflects the visibleParam.value, rather than the computed visiblity value. ([d61a8d4](https://github.com/ZeaInc/zea-tree-view/commit/d61a8d4fe6e3c239ff1401c391a6e5bc6bdbc085))
+
 ### [0.1.2](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.1...v0.1.2) (2022-03-22)
 
 ### Bug Fixes

@@ -1,4 +1,8 @@
-import { TreeItem, InstanceItem } from '@zeainc/zea-engine'
+import {
+  TreeItem,
+  InstanceItem,
+  VisibilityChangedEvent,
+} from '@zeainc/zea-engine'
 // import type { ChildAddedEvent } from '@zeainc/zea-engine'
 import {
   SelectionManager,
@@ -156,6 +160,9 @@ class ZeaTreeView extends HTMLElement {
 
       .toggle-visible {
         margin: 0 5px;
+      }
+      .invisible-item {
+        color: darkgrey;
       }
 
       .search-wrapper {
@@ -395,11 +402,12 @@ class ZeaTreeView extends HTMLElement {
     $toggleVisible.classList.add('toggle-visible')
     $toggleVisible.type = 'checkbox'
 
-    $toggleVisible.checked = treeItem.isVisible()
+    $toggleVisible.checked = treeItem.visibleParam.value
     $toggleVisible.addEventListener('click', (event) => {
       event.stopPropagation()
-      this.setVisibilityOf(treeItem, !treeItem.isVisible())
+      this.setVisibilityOf(treeItem, !treeItem.visibleParam.value)
     })
+    if (!treeItem.isVisible()) $row.classList.add('invisible-item')
 
     const $cellForName = document.createElement('td')
     $cellForName.appendChild($toggleExpanded)
@@ -432,9 +440,14 @@ class ZeaTreeView extends HTMLElement {
       setHighlight()
     })
 
-    listenerIds['visibilityChanged'] = treeItem.on('visibilityChanged', () => {
-      $toggleVisible.checked = treeItem.isVisible()
-    })
+
+    listenerIds['visibilityChanged'] = treeItem.on(
+      'visibilityChanged',
+      (event: VisibilityChangedEvent) => {
+        if (event.visible) $row.classList.remove('invisible-item')
+        else $row.classList.add('invisible-item')
+      }
+    )
 
     listenerIds['childAdded'] = treeItem.on('childAdded', (event: object) => {
       const isExpanded = this.isItemExpanded(treeItem)

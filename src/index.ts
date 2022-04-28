@@ -30,6 +30,7 @@ class ZeaTreeView extends HTMLElement {
   private isSearching = false
   // private isTheFirstRender = true
   private $styleTag = document.createElement('style')
+  private $slotTag = document.createElement('slot')
   private $tableWrapper = document.createElement('div')
   private $thead = document.createElement('thead')
   private $tbody = document.createElement('tbody')
@@ -47,6 +48,8 @@ class ZeaTreeView extends HTMLElement {
 
     this.shadowRoot?.appendChild(this.$styleTag)
     this.setStyles()
+    this.$slotTag.setAttribute('name', 'overload')
+    this.shadowRoot?.appendChild(this.$slotTag)
 
     // Main wrapper.
     const $mainWrapper = document.createElement('div')
@@ -136,6 +139,7 @@ class ZeaTreeView extends HTMLElement {
    */
   private setStyles(): void {
     this.$styleTag.textContent = `
+      @import "zea-tree-view_custom.css";
       .MainWrapper {
         --search-wrapper-height: 35px;
 
@@ -248,7 +252,7 @@ class ZeaTreeView extends HTMLElement {
   /**
    * Toggle an item's visibility.
    */
-  private setVisibilityOf(item: TreeItem, isVisible: boolean): void {
+  private static setVisibilityOf(item: TreeItem, isVisible: boolean): void {
     try {
       const undoRedoManager = UndoRedoManager.getInstance()
 
@@ -314,6 +318,8 @@ class ZeaTreeView extends HTMLElement {
     $parentItemRow?: HTMLTableRowElement
   ): void {
     const $row = document.createElement('tr')
+    $row.setAttribute('part', 'row')
+
     // @ts-ignore
     $row.treeItem = treeItem
     $row.title = this.getTooltipFor(treeItem)
@@ -407,7 +413,7 @@ class ZeaTreeView extends HTMLElement {
     $toggleVisible.checked = treeItem.visibleParam.value
     $toggleVisible.addEventListener('click', (event) => {
       event.stopPropagation()
-      this.setVisibilityOf(treeItem, !treeItem.visibleParam.value)
+      ZeaTreeView.setVisibilityOf(treeItem, !treeItem.visibleParam.value)
     })
     if (!treeItem.isVisible()) $row.classList.add('invisible-item')
 

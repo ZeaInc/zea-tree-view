@@ -3,7 +3,6 @@ import {
   InstanceItem,
   VisibilityChangedEvent,
 } from '@zeainc/zea-engine'
-// import type { ChildAddedEvent } from '@zeainc/zea-engine'
 import {
   SelectionManager,
   UndoRedoManager,
@@ -150,14 +149,16 @@ class ZeaTreeView extends HTMLElement {
         visibility: hidden;
       }
 
-      .toggle-expanded {
+      .toggle-expanded,
+      .toggle-collapsed {
         background: none;
         border: none;
         color: var(--zea-tree-button-text-color, black);
         width: 20px;
       }
 
-      .toggle-expanded:hover {
+      .toggle-expanded:hover,
+      .toggle-collapsed:hover {
         background-color: var(--zea-tree-button-bg-color, silver);
         border-radius: 2px;
       }
@@ -390,7 +391,7 @@ class ZeaTreeView extends HTMLElement {
     const hasChildren = children.length
 
     const $toggleExpanded = document.createElement('button')
-    $toggleExpanded.classList.add('toggle-expanded')
+    $toggleExpanded.classList.add(isExpanded ? 'toggle-expanded' : 'toggle-collapsed')
     if (this.isSearching || !hasChildren) {
       $toggleExpanded.classList.add('invisible')
     }

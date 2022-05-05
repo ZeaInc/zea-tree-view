@@ -29,7 +29,6 @@ class ZeaTreeView extends HTMLElement {
   private isSearching = false
   // private isTheFirstRender = true
   private $styleTag = document.createElement('style')
-  private $slotTag = document.createElement('slot')
   private $tableWrapper = document.createElement('div')
   private $thead = document.createElement('thead')
   private $tbody = document.createElement('tbody')
@@ -47,8 +46,6 @@ class ZeaTreeView extends HTMLElement {
 
     this.shadowRoot?.appendChild(this.$styleTag)
     this.setStyles()
-    this.$slotTag.setAttribute('name', 'overload')
-    this.shadowRoot?.appendChild(this.$slotTag)
 
     // Main wrapper.
     const $mainWrapper = document.createElement('div')

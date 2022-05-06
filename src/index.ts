@@ -316,7 +316,6 @@ class ZeaTreeView extends HTMLElement {
     $parentItemRow?: HTMLTableRowElement
   ): void {
     const $row = document.createElement('tr')
-    $row.setAttribute('part', 'row')
 
     // @ts-ignore
     $row.treeItem = treeItem

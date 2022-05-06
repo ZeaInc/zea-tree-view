@@ -3,7 +3,6 @@ import {
   InstanceItem,
   VisibilityChangedEvent,
 } from '@zeainc/zea-engine'
-// import type { ChildAddedEvent } from '@zeainc/zea-engine'
 import {
   SelectionManager,
   UndoRedoManager,
@@ -136,6 +135,7 @@ class ZeaTreeView extends HTMLElement {
    */
   private setStyles(): void {
     this.$styleTag.textContent = `
+      @import "zea-tree-view_custom.css";
       .MainWrapper {
         --search-wrapper-height: 35px;
 
@@ -146,14 +146,16 @@ class ZeaTreeView extends HTMLElement {
         visibility: hidden;
       }
 
-      .toggle-expanded {
+      .toggle-expanded,
+      .toggle-collapsed {
         background: none;
         border: none;
         color: var(--zea-tree-button-text-color, black);
         width: 20px;
       }
 
-      .toggle-expanded:hover {
+      .toggle-expanded:hover,
+      .toggle-collapsed:hover {
         background-color: var(--zea-tree-button-bg-color, silver);
         border-radius: 2px;
       }
@@ -248,7 +250,7 @@ class ZeaTreeView extends HTMLElement {
   /**
    * Toggle an item's visibility.
    */
-  private setVisibilityOf(item: TreeItem, isVisible: boolean): void {
+  private static setVisibilityOf(item: TreeItem, isVisible: boolean): void {
     try {
       const undoRedoManager = UndoRedoManager.getInstance()
 
@@ -314,6 +316,7 @@ class ZeaTreeView extends HTMLElement {
     $parentItemRow?: HTMLTableRowElement
   ): void {
     const $row = document.createElement('tr')
+
     // @ts-ignore
     $row.treeItem = treeItem
     $row.title = this.getTooltipFor(treeItem)
@@ -384,7 +387,7 @@ class ZeaTreeView extends HTMLElement {
     const hasChildren = children.length
 
     const $toggleExpanded = document.createElement('button')
-    $toggleExpanded.classList.add('toggle-expanded')
+    $toggleExpanded.classList.add(isExpanded ? 'toggle-expanded' : 'toggle-collapsed')
     if (this.isSearching || !hasChildren) {
       $toggleExpanded.classList.add('invisible')
     }
@@ -407,7 +410,7 @@ class ZeaTreeView extends HTMLElement {
     $toggleVisible.checked = treeItem.visibleParam.value
     $toggleVisible.addEventListener('click', (event) => {
       event.stopPropagation()
-      this.setVisibilityOf(treeItem, !treeItem.visibleParam.value)
+      ZeaTreeView.setVisibilityOf(treeItem, !treeItem.visibleParam.value)
     })
     if (!treeItem.isVisible()) $row.classList.add('invisible-item')
 

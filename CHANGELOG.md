@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.5](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.3...v0.1.5) (2022-05-06)
+
+
+### Features
+
+* add support for custom CSS ([#39](https://github.com/ZeaInc/zea-tree-view/issues/39)) ([bb48dad](https://github.com/ZeaInc/zea-tree-view/commit/bb48dad11d379b9a50af5ca36fb3bfcc63e7d3e0))
+
 ### [0.1.4](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.3...v0.1.4) (2022-04-27)
 
 ### [0.1.3](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.2...v0.1.3) (2022-03-30)

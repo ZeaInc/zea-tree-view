@@ -398,8 +398,12 @@ class ZeaTreeView extends HTMLElement {
       event.stopPropagation()
       if (this.toggleItemExpanded(treeItem)) {
         expandChildren()
+        $toggleExpanded.classList.replace('toggle-collapsed','toggle-expanded')
+        $toggleExpanded.textContent = '-'
       } else {
         collapseChildren()
+        $toggleExpanded.classList.replace('toggle-expanded', 'toggle-collapsed')
+        $toggleExpanded.textContent = '+'
       }
     })
 

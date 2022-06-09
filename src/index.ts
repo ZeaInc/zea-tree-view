@@ -112,10 +112,6 @@ class ZeaTreeView extends HTMLElement {
     this.selectionManager.on('selectionChanged', (event) => {
       const { selection: items } = event
 
-      if (this.isSearching) {
-        return
-      }
-
       items.forEach((treeItem: TreeItem) => {
         this.expandAncestorsOf(treeItem)
       })
@@ -671,9 +667,14 @@ class ZeaTreeView extends HTMLElement {
     }
 
     const parentId = parent.getId()
+    this.expandedItemsTracker[parentId] = true
+
+    if (this.isSearching) {
+      this.expandAncestorsOf(parent)
+      return
+    }
 
     const $row = this.rows[parentId]
-    this.expandedItemsTracker[parentId] = true
     if ($row) {
       // @ts-ignore
       $row.expandChildren()

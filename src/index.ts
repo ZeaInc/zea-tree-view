@@ -366,10 +366,32 @@ class ZeaTreeView extends HTMLElement {
 
     if ($parentItemRow) {
       if (index >= 0) {
+        let offset = 0
+        const parentItem = treeItem.getParentItem()
+        if (parentItem) {
+          // Now we calculate the row offset of this item
+          // relative ot its parent by traversing the tree,
+          // and counting how many expanded items exist.
+          const __c = (subTreeItem: TreeItem): boolean => {
+            const children = subTreeItem.getChildren()
+            for (const childItem of children) {
+              if (!__t(childItem)) return false
+            }
+            return true
+          }
+          const __t = (subTreeItem: TreeItem): boolean => {
+            if (subTreeItem == treeItem) return false
+            offset++
+            if (this.isItemExpanded(subTreeItem)) __c(subTreeItem)
+            return true
+          }
+          __c(parentItem)
+        }
+
         // Insert this row at the index provided
         let step = 0
         let $sibling = $parentItemRow
-        while (step < index) {
+        while (step < offset) {
           $sibling = <HTMLTableRowElement>$sibling.nextSibling
           step += 1
         }

@@ -387,7 +387,9 @@ class ZeaTreeView extends HTMLElement {
     const hasChildren = children.length
 
     const $toggleExpanded = document.createElement('button')
-    $toggleExpanded.classList.add(isExpanded ? 'toggle-expanded' : 'toggle-collapsed')
+    $toggleExpanded.classList.add(
+      isExpanded ? 'toggle-expanded' : 'toggle-collapsed'
+    )
     if (this.isSearching || !hasChildren) {
       $toggleExpanded.classList.add('invisible')
     }
@@ -506,6 +508,7 @@ class ZeaTreeView extends HTMLElement {
       if (!isExpanded) {
         return
       }
+      $toggleExpanded.textContent = '-'
 
       for (let i = 0; i < children.length; i += 1) {
         const child = children[i]
@@ -517,6 +520,8 @@ class ZeaTreeView extends HTMLElement {
     }
 
     const collapseChildren = () => {
+      $toggleExpanded.textContent = '+'
+
       children.forEach((child) => {
         if (this.shouldRenderItem(child)) {
           this.removeRow(child)

@@ -177,6 +177,7 @@ class ZeaTreeView extends HTMLElement {
         border: none;
         color: var(--zea-tree-button-text-color, black);
         width: 20px;
+        padding: 0px; 
       }
 
       .toggle-expanded:hover,
@@ -243,6 +244,11 @@ class ZeaTreeView extends HTMLElement {
 
       tr:nth-child(odd) {
         background-color: var(--zea-tree-odd-row-bg-color, dimgray);
+      }
+
+      
+      .arrowDown {
+        transform: rotate(90deg);
       }
     `
   }
@@ -434,13 +440,17 @@ class ZeaTreeView extends HTMLElement {
     const hasChildren = children.length
 
     const $toggleExpanded = document.createElement('button')
-    $toggleExpanded.classList.add(
-      isExpanded ? 'toggle-expanded' : 'toggle-collapsed'
-    )
+    // https://icons.getbootstrap.com/icons/chevron-right/
+    $toggleExpanded.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+  </svg>`
+    $toggleExpanded.classList.add('toggle-expanded')
+
+    if (isExpanded) $toggleExpanded.classList.add('arrowDown')
     if (this.isSearching || !hasChildren) {
       $toggleExpanded.classList.add('invisible')
     }
-    $toggleExpanded.textContent = isExpanded ? '-' : '+'
+
     const level = treeItem.getPath().length - 1
     $toggleExpanded.style.marginLeft = `${level * 10}px`
     $toggleExpanded.addEventListener('click', (event) => {
@@ -512,7 +522,6 @@ class ZeaTreeView extends HTMLElement {
         this.addRow(childItem, index, $row)
       } else {
         $toggleExpanded.classList.remove('invisible')
-        $toggleExpanded.textContent = isExpanded ? '-' : '+'
       }
     })
 
@@ -555,7 +564,7 @@ class ZeaTreeView extends HTMLElement {
       if (!isExpanded) {
         return
       }
-      $toggleExpanded.textContent = '-'
+      $toggleExpanded.classList.add('arrowDown')
 
       for (let i = 0; i < children.length; i += 1) {
         const child = children[i]
@@ -567,7 +576,7 @@ class ZeaTreeView extends HTMLElement {
     }
 
     const collapseChildren = () => {
-      $toggleExpanded.textContent = '+'
+      $toggleExpanded.classList.remove('arrowDown')
 
       children.forEach((child) => {
         if (this.shouldRenderItem(child)) {

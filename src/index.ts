@@ -36,6 +36,10 @@ class ZeaTreeView extends HTMLElement {
   private listenerIds: Record<number, Record<string, number>> = {}
   private rows: Record<number, HTMLTableRowElement> = {}
 
+  // This property enables specifying a custom CSS file that will be loaded
+  // into the context of the WebComponent, supporting rich styles.
+  public customCSSFile = ''
+
   /**
    * Constructor.
    */
@@ -45,7 +49,6 @@ class ZeaTreeView extends HTMLElement {
     this.attachShadow({ mode: 'open' })
 
     this.shadowRoot?.appendChild(this.$styleTag)
-    this.setStyles()
 
     // Main wrapper.
     const $mainWrapper = document.createElement('div')
@@ -94,6 +97,8 @@ class ZeaTreeView extends HTMLElement {
    * @param {object} appData - App data.
    */
   setTreeItem(treeItem: TreeItem) {
+    this.setStyles()
+
     this.rootTreeItem = treeItem
 
     this.expandedItemsTracker = {}
@@ -155,7 +160,7 @@ class ZeaTreeView extends HTMLElement {
    */
   private setStyles(): void {
     this.$styleTag.textContent = `
-      @import "zea-tree-view_custom.css";
+      ${this.customCSSFile != '' ? `@import "${this.customCSSFile}";` : ''}
       .MainWrapper {
         --search-wrapper-height: 35px;
 

@@ -18,6 +18,7 @@ const columns = [
 ]
 
 const $tree = document.querySelector('#tree')
+$tree.customCSSFile = 'zea-tree-view_custom.css'
 $tree.setColumns(columns)
 $tree.setSelectionManager(selectionManager)
 $tree.setTreeItem(scene.getRoot())

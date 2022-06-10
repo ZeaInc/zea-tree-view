@@ -52,6 +52,13 @@ class ZeaTreeView extends HTMLElement {
     $mainWrapper.className = 'MainWrapper'
     this.shadowRoot?.appendChild($mainWrapper)
 
+    $mainWrapper.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key === 'f') {
+        // scroll into view so we can see it.
+        this.scrollSelectionIntoView()
+      }
+    })
+
     // Search wrapper.
     const $searchWrapper = document.createElement('div')
     $searchWrapper.className = 'search-wrapper'
@@ -110,12 +117,29 @@ class ZeaTreeView extends HTMLElement {
     this.selectionManager = selectionManager
 
     this.selectionManager.on('selectionChanged', (event) => {
-      const { selection: items } = event
+      const selection: Set<TreeItem> = event.selection
 
-      items.forEach((treeItem: TreeItem) => {
+      selection.forEach((treeItem: TreeItem) => {
         this.expandAncestorsOf(treeItem)
       })
+      this.scrollSelectionIntoView()
     })
+  }
+
+  private scrollSelectionIntoView() {
+    if (this.selectionManager) {
+      const selection = this.selectionManager.getSelection()
+      if (selection.size > 0) {
+        const treeItem = Array.from(selection)[0]
+        const $row = this.rows[treeItem.getId()]
+        if ($row) {
+          $row.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+          })
+        }
+      }
+    }
   }
 
   /**
@@ -290,7 +314,7 @@ class ZeaTreeView extends HTMLElement {
   /**
    * Set the current selected item.
    */
-  private setSelection(treeItem: TreeItem, shouldReplace = true): void {
+  private selectItem(treeItem: TreeItem, shouldReplace = true): void {
     if (!this.selectionManager) {
       return
     }
@@ -320,7 +344,7 @@ class ZeaTreeView extends HTMLElement {
 
     $row.addEventListener('click', (event) => {
       const shouldReplace = !event.ctrlKey && !event.metaKey
-      this.setSelection(treeItem, shouldReplace)
+      this.selectItem(treeItem, shouldReplace)
     })
 
     $row.addEventListener('keydown', (event: KeyboardEvent) => {
@@ -335,7 +359,7 @@ class ZeaTreeView extends HTMLElement {
 
           previousSibling.focus()
           // @ts-ignore
-          this.setSelection(previousSibling?.treeItem)
+          this.selectItem(previousSibling?.treeItem)
           break
         case 'ArrowDown':
           event.preventDefault()
@@ -347,7 +371,7 @@ class ZeaTreeView extends HTMLElement {
 
           nextSibling.focus()
           // @ts-ignore
-          this.setSelection(nextSibling.treeItem)
+          this.selectItem(nextSibling.treeItem)
           break
         case 'ArrowRight':
           event.preventDefault()
@@ -729,6 +753,12 @@ class ZeaTreeView extends HTMLElement {
     this.resetRows()
 
     this.addRow(this.rootTreeItem)
+
+    // At the end of the search, scroll to see what we may have
+    // selected during the search.
+    if (this.selectionManager) {
+      this.scrollSelectionIntoView()
+    }
   }
 
   resetRows(): void {

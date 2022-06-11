@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.7](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.6...v0.1.7) (2022-06-11)
+
+
+### Bug Fixes
+
+* chevron ([f2a78e4](https://github.com/ZeaInc/zea-tree-view/commit/f2a78e40178ee887f970727f9d7372a71da30d70))
+
 ### [0.1.6](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.5...v0.1.6) (2022-06-11)
 
 ### Features

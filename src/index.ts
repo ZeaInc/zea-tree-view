@@ -176,8 +176,9 @@ class ZeaTreeView extends HTMLElement {
         background: none;
         border: none;
         color: var(--zea-tree-button-text-color, black);
+        height: 20px;
         width: 20px;
-        padding: 0px; 
+        padding: 0px;
       }
 
       .toggle-expanded:hover,
@@ -237,6 +238,11 @@ class ZeaTreeView extends HTMLElement {
         white-space: nowrap;
       }
 
+      .CellForName {
+        display: flex;
+        align-items: center;
+      }
+
       tr {
         background-color: var(--zea-tree-even-row-bg-color, gray);
         outline-offset: -1px;
@@ -246,7 +252,6 @@ class ZeaTreeView extends HTMLElement {
         background-color: var(--zea-tree-odd-row-bg-color, dimgray);
       }
 
-      
       .arrowDown {
         transform: rotate(90deg);
       }
@@ -440,10 +445,12 @@ class ZeaTreeView extends HTMLElement {
     const hasChildren = children.length
 
     const $toggleExpanded = document.createElement('button')
-    // https://icons.getbootstrap.com/icons/chevron-right/
-    $toggleExpanded.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-  </svg>`
+    // https://heroicons.com
+    $toggleExpanded.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+      </svg>
+    `
     $toggleExpanded.classList.add('toggle-expanded')
 
     if (isExpanded) $toggleExpanded.classList.add('arrowDown')
@@ -474,6 +481,7 @@ class ZeaTreeView extends HTMLElement {
     if (!treeItem.isVisible()) $row.classList.add('invisible-item')
 
     const $cellForName = document.createElement('td')
+    $cellForName.classList.add('CellForName')
     $cellForName.appendChild($toggleExpanded)
     $cellForName.appendChild($toggleVisible)
     const $name = document.createElement('span')

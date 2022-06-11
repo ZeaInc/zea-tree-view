@@ -2,12 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-### [0.1.5](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.3...v0.1.5) (2022-05-06)
-
+### [0.1.6](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.5...v0.1.6) (2022-06-11)
 
 ### Features
 
-* add support for custom CSS ([#39](https://github.com/ZeaInc/zea-tree-view/issues/39)) ([bb48dad](https://github.com/ZeaInc/zea-tree-view/commit/bb48dad11d379b9a50af5ca36fb3bfcc63e7d3e0))
+- Allow users to specify a CSS file for the tree view to load to support more customization. ([3c87b66](https://github.com/ZeaInc/zea-tree-view/commit/2c87b6624ab8913d1349d26984db54fa2559893a))
+- Display an SVG chevron on the expand/collapse button. ([fea1e1d](https://github.com/ZeaInc/zea-tree-view/commit/fea1e1d0a28c646410690daaa3bdb000e2e94aba))
+- Scroll into view after item selection or at the end of search. ([1ffdf29](https://github.com/ZeaInc/zea-tree-view/commit/1ffdf29b18254fadc782950ae7bcfb95f0450fb1))
+
+### Bug Fixes
+
+- After ending a search, selected items are left fully expanded. ([b3cda81](https://github.com/ZeaInc/zea-tree-view/commit/b3cda81b5feb9424abb772bbd4dfc7cb3cafab92))
+- The +/- symbol is not correctly updated when expanding rows. ([8bb4a29](https://github.com/ZeaInc/zea-tree-view/commit/8bb4a2919b98b5494422bd1ab457b62573a20357))
+- When expanding a row, the children rows are now correctly inserted when previous siblings were also expanded. ([74ac3b9](https://github.com/ZeaInc/zea-tree-view/commit/74ac3b953602278159db836d41c13b923fc5d4a0))
+
+### [0.1.5](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.3...v0.1.5) (2022-05-06)
+
+### Features
+
+- Add support for custom CSS ([#39](https://github.com/ZeaInc/zea-tree-view/issues/39)) ([bb48dad](https://github.com/ZeaInc/zea-tree-view/commit/bb48dad11d379b9a50af5ca36fb3bfcc63e7d3e0))
 
 ### [0.1.4](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.3...v0.1.4) (2022-04-27)
 

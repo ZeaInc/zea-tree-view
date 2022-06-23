@@ -9,13 +9,18 @@ import {
   ParameterValueChange,
 } from '@zeainc/zea-ux'
 
-interface ExpandedItemsTracker {
-  [index: string]: boolean
-}
-
 interface Column {
   title: string
   paramName: string
+}
+
+interface Row {
+  treeItem: TreeItem
+  element: HTMLTableRowElement
+  listenerIds: Record<string, number>
+  expandedSubtreeCount: number
+  expandChildren?: () => void
+  collapseChildren?: () => void
 }
 
 /**
@@ -23,7 +28,6 @@ interface Column {
  */
 class ZeaTreeView extends HTMLElement {
   private columns: Column[] = []
-  private expandedItemsTracker: ExpandedItemsTracker = {}
   private rootTreeItem!: TreeItem
   private selectionManager: SelectionManager | null = null
   private isSearching = false
@@ -33,8 +37,8 @@ class ZeaTreeView extends HTMLElement {
   private $thead = document.createElement('thead')
   private $tbody = document.createElement('tbody')
 
-  private listenerIds: Record<number, Record<string, number>> = {}
-  private rows: Record<number, HTMLTableRowElement> = {}
+  private expandedItemsTracker: Map<TreeItem, boolean> = new Map()
+  private rows: Map<TreeItem, Row> = new Map()
 
   // This property enables specifying a custom CSS file that will be loaded
   // into the context of the WebComponent, supporting rich styles.
@@ -101,7 +105,7 @@ class ZeaTreeView extends HTMLElement {
 
     this.rootTreeItem = treeItem
 
-    this.expandedItemsTracker = {}
+    this.expandedItemsTracker = new Map()
 
     this.resetRows()
 
@@ -124,9 +128,11 @@ class ZeaTreeView extends HTMLElement {
     this.selectionManager.on('selectionChanged', (event) => {
       const selection: Set<TreeItem> = event.selection
 
-      selection.forEach((treeItem: TreeItem) => {
-        this.expandAncestorsOf(treeItem)
-      })
+      if (!this.isSearching) {
+        selection.forEach((treeItem: TreeItem) => {
+          this.expandAncestorsOf(treeItem)
+        })
+      }
       this.scrollSelectionIntoView()
     })
   }
@@ -136,9 +142,9 @@ class ZeaTreeView extends HTMLElement {
       const selection = this.selectionManager.getSelection()
       if (selection.size > 0) {
         const treeItem = Array.from(selection)[0]
-        const $row = this.rows[treeItem.getId()]
-        if ($row) {
-          $row.scrollIntoView({
+        const $tr = this.rows.get(treeItem)?.element
+        if ($tr) {
+          $tr.scrollIntoView({
             behavior: 'smooth',
             block: 'nearest',
           })
@@ -259,31 +265,6 @@ class ZeaTreeView extends HTMLElement {
   }
 
   /**
-   * Check whether an item is expanded.
-   */
-  private isItemExpanded(item: TreeItem): boolean {
-    const itemId = item.getId()
-
-    if (itemId in this.expandedItemsTracker) {
-      return this.expandedItemsTracker[itemId]
-    }
-
-    this.expandedItemsTracker[itemId] = false
-
-    return false
-  }
-
-  /**
-   * Toggle an item's expanded or collapsed state.
-   */
-  private toggleItemExpanded(item: TreeItem): boolean {
-    const itemId = item.getId()
-    const isExpanded = !this.isItemExpanded(item)
-    this.expandedItemsTracker[itemId] = isExpanded
-    return isExpanded
-  }
-
-  /**
    * Toggle an item's visibility.
    */
   private static setVisibilityOf(item: TreeItem, isVisible: boolean): void {
@@ -346,102 +327,149 @@ class ZeaTreeView extends HTMLElement {
   /**
    * Add row.
    */
-  private addRow(
-    treeItem: TreeItem,
-    index: number = -1,
-    $parentItemRow?: HTMLTableRowElement
-  ): void {
-    const $row = document.createElement('tr')
+  private addRow(treeItem: TreeItem, parentItemRow?: Row): void {
+    const $tr = document.createElement('tr')
+    const row: Row = {
+      element: $tr,
+      treeItem,
+      listenerIds: {},
+      expandedSubtreeCount: 0,
+    }
+    this.rows.set(treeItem, row)
 
-    // @ts-ignore
-    $row.treeItem = treeItem
-    $row.title = this.getTooltipFor(treeItem)
-    $row.tabIndex = 0
+    $tr.title = this.getTooltipFor(treeItem)
+    $tr.tabIndex = 0
+    if (!this.expandedItemsTracker.has(treeItem))
+      this.expandedItemsTracker.set(treeItem, false)
 
-    $row.addEventListener('click', (event) => {
+    $tr.addEventListener('click', (event) => {
       const shouldReplace = !event.ctrlKey && !event.metaKey
       this.selectItem(treeItem, shouldReplace)
     })
 
-    $row.addEventListener('keydown', (event: KeyboardEvent) => {
+    $tr.addEventListener('keydown', (event: KeyboardEvent) => {
       switch (event.key) {
-        case 'ArrowUp':
+        case 'ArrowUp': {
           event.preventDefault()
-          const previousSibling = <HTMLTableRowElement>$row.previousSibling
+          const parentItem = treeItem.getParentItem()
+          if (parentItem) {
+            const index = parentItem.getChildIndex(treeItem)
+            if (index > 0) {
+              const prevChild = parentItem.getChild(index - 1)
+              const row = this.rows.get(prevChild)
+              if (row) {
+                row.element.focus()
+                this.selectItem(prevChild)
+              }
+            } else {
+              // Note: The parent item in the tree may be one level up
+              // because we skip the displaying the children of the InstancItem.
+              const parentItem = this.parentOf(treeItem)
+              if (parentItem) {
+                const row = this.rows.get(parentItem)
+                if (row) {
+                  row.element.focus()
+                  this.selectItem(parentItem)
+                }
+              }
+            }
+          }
+          break
+        }
+        case 'ArrowDown': {
+          event.preventDefault()
+          const parentItem = treeItem.getParentItem()
+          if (parentItem) {
+            const index = parentItem.getChildIndex(treeItem)
+            if (index < parentItem.getNumChildren() - 1) {
+              const nextChild = parentItem.getChild(index + 1)
+              const row = this.rows.get(nextChild)
+              if (row) {
+                row.element.focus()
+                this.selectItem(nextChild)
+              }
+            } else {
+              const parentParentItem = parentItem.getParentItem()
+              if (parentParentItem) {
+                const index = parentParentItem.getChildIndex(parentItem)
+                if (index < parentParentItem.getNumChildren() - 1) {
+                  const nextChild = parentParentItem.getChild(index + 1)
+                  const row = this.rows.get(nextChild)
+                  if (row) {
+                    row.element.focus()
+                    this.selectItem(nextChild)
+                  }
+                }
+              }
+            }
+          } else {
+            const children = this.childrenOf(treeItem)
+            if (
+              this.expandedItemsTracker.get(treeItem) &&
+              children.length > 0
+            ) {
+              const row = this.rows.get(children[0])
+              if (row) {
+                row.element.focus()
+                this.selectItem(children[0])
+              }
+            }
+          }
+          break
+        }
+        case 'ArrowRight': {
+          event.preventDefault()
+          const children = this.childrenOf(treeItem)
+          if (children.length > 0) {
+            if (!this.expandedItemsTracker.get(treeItem)) {
+              expandChildren()
+            }
+            const row = this.rows.get(children[0])
+            if (row) {
+              row.element.focus()
+              this.selectItem(children[0])
+            }
+          }
+          break
+        }
+        case 'ArrowLeft': {
+          event.preventDefault()
 
-          if (!previousSibling) {
-            return
+          if (this.expandedItemsTracker.get(treeItem)) {
+            collapseChildren()
           }
 
-          previousSibling.focus()
-          // @ts-ignore
-          this.selectItem(previousSibling?.treeItem)
+          // const parentItem = treeItem.getParentItem()
+          // if (parentItem) {
+          //   this.selectItem(parentItem)
+          // }
           break
-        case 'ArrowDown':
-          event.preventDefault()
-          const nextSibling = <HTMLTableRowElement>$row.nextSibling
-
-          if (!nextSibling) {
-            return
-          }
-
-          nextSibling.focus()
-          // @ts-ignore
-          this.selectItem(nextSibling.treeItem)
-          break
-        case 'ArrowRight':
-          event.preventDefault()
-          expandChildren()
-          break
-        case 'ArrowLeft':
-          event.preventDefault()
-          collapseChildren()
-          break
+        }
       }
     })
 
-    if ($parentItemRow) {
-      if (index >= 0) {
-        let offset = 0
-        const parentItem = treeItem.getParentItem()
-        if (parentItem) {
-          // Now we calculate the row offset of this item
-          // relative ot its parent by traversing the tree,
-          // and counting how many expanded items exist.
-          const __c = (subTreeItem: TreeItem): boolean => {
-            const children = subTreeItem.getChildren()
-            for (const childItem of children) {
-              if (!__t(childItem)) return false
-            }
-            return true
-          }
-          const __t = (subTreeItem: TreeItem): boolean => {
-            if (subTreeItem == treeItem) return false
-            offset++
-            if (this.isItemExpanded(subTreeItem)) __c(subTreeItem)
-            return true
-          }
-          __c(parentItem)
-        }
-
-        // Insert this row at the index provided
-        let step = 0
-        let $sibling = $parentItemRow
-        while (step < offset) {
-          $sibling = <HTMLTableRowElement>$sibling.nextSibling
-          step += 1
-        }
-        this.insertAfter($sibling, $row)
-      } else {
-        this.insertAfter($parentItemRow, $row)
+    if (parentItemRow) {
+      // const parentItem = parentItemRow.treeItem!
+      // const parentRow = this.rows.get(parentItem)!
+      // Insert this row at the index provided
+      let step = 0
+      let $sibling = parentItemRow.element
+      while (step < parentItemRow.expandedSubtreeCount) {
+        $sibling = <HTMLTableRowElement>$sibling.nextSibling
+        step += 1
       }
+      this.insertAfter($sibling, $tr)
+
+      parentItemRow.expandedSubtreeCount++
     } else {
-      this.$tbody.appendChild($row)
+      this.$tbody.appendChild($tr)
     }
 
     const children = this.childrenOf(treeItem)
 
-    const isExpanded = this.isSearching ? false : this.isItemExpanded(treeItem)
+    const isExpanded = this.isSearching
+      ? false
+      : this.expandedItemsTracker.get(treeItem)
     const hasChildren = children.length
 
     const $toggleExpanded = document.createElement('button')
@@ -462,7 +490,7 @@ class ZeaTreeView extends HTMLElement {
     $toggleExpanded.style.marginLeft = `${level * 10}px`
     $toggleExpanded.addEventListener('click', (event) => {
       event.stopPropagation()
-      if (this.toggleItemExpanded(treeItem)) {
+      if (!this.expandedItemsTracker.get(treeItem)) {
         expandChildren()
       } else {
         collapseChildren()
@@ -478,7 +506,7 @@ class ZeaTreeView extends HTMLElement {
       event.stopPropagation()
       ZeaTreeView.setVisibilityOf(treeItem, !treeItem.visibleParam.value)
     })
-    if (!treeItem.isVisible()) $row.classList.add('invisible-item')
+    if (!treeItem.isVisible()) $tr.classList.add('invisible-item')
 
     const $cellForName = document.createElement('td')
     $cellForName.classList.add('CellForName')
@@ -487,56 +515,62 @@ class ZeaTreeView extends HTMLElement {
     const $name = document.createElement('span')
     $name.textContent = this.nameOf(treeItem)
     $cellForName.appendChild($name)
-    $row.appendChild($cellForName)
+    $tr.appendChild($cellForName)
 
     this.columns.forEach((column) => {
       const { paramName } = column
 
       const $cell = document.createElement('td')
-      $row.appendChild($cell)
+      $tr.appendChild($cell)
 
       if (treeItem.hasParameter(paramName)) {
         $cell.textContent = treeItem.getParameter(paramName)?.getValue()
       }
     })
 
-    const listenerIds: Record<string, number> = {}
-    this.listenerIds[treeItem.getId()] = listenerIds
-
-    listenerIds['nameChanged'] = treeItem.on('nameChanged', (event: any) => {
-      // @ts-ignore
-      $name.textContent = event.newName
-    })
-
-    listenerIds['highlightChanged'] = treeItem.on('highlightChanged', () => {
-      setHighlight()
-    })
-
-    listenerIds['visibilityChanged'] = treeItem.on(
-      'visibilityChanged',
-      (event: VisibilityChangedEvent) => {
-        if (event.visible) $row.classList.remove('invisible-item')
-        else $row.classList.add('invisible-item')
+    row.listenerIds['nameChanged'] = treeItem.on(
+      'nameChanged',
+      (event: any) => {
+        // @ts-ignore
+        $name.textContent = event.newName
       }
     )
 
-    listenerIds['childAdded'] = treeItem.on('childAdded', (event: object) => {
-      const isExpanded = this.isItemExpanded(treeItem)
-      if (isExpanded) {
-        // @ts-ignore
-        const index = event.index
-        // @ts-ignore
-        const childItem = event.childItem
-        this.addRow(childItem, index, $row)
-      } else {
-        $toggleExpanded.classList.remove('invisible')
+    row.listenerIds['highlightChanged'] = treeItem.on(
+      'highlightChanged',
+      () => {
+        setHighlight()
       }
-    })
+    )
 
-    listenerIds['childRemoved'] = treeItem.on(
+    row.listenerIds['visibilityChanged'] = treeItem.on(
+      'visibilityChanged',
+      (event: VisibilityChangedEvent) => {
+        if (event.visible) $tr.classList.remove('invisible-item')
+        else $tr.classList.add('invisible-item')
+      }
+    )
+
+    row.listenerIds['childAdded'] = treeItem.on(
+      'childAdded',
+      (event: object) => {
+        const isExpanded = this.expandedItemsTracker.get(treeItem)
+        if (isExpanded) {
+          // @ts-ignore
+          const index = event.index
+          // @ts-ignore
+          const childItem = event.childItem
+          this.addRow(childItem, row)
+        } else {
+          $toggleExpanded.classList.remove('invisible')
+        }
+      }
+    )
+
+    row.listenerIds['childRemoved'] = treeItem.on(
       'childRemoved',
       (event: object) => {
-        const isExpanded = this.isItemExpanded(treeItem)
+        const isExpanded = this.expandedItemsTracker.get(treeItem)
         if (isExpanded) {
           // @ts-ignore
           const index = event.index
@@ -551,14 +585,11 @@ class ZeaTreeView extends HTMLElement {
       const backgroundColor = treeItem.getHighlight()
 
       if (backgroundColor) {
-        $row.style.setProperty(
-          'outline',
-          `1px solid ${backgroundColor.toHex()}`
-        )
+        $tr.style.setProperty('outline', `1px solid ${backgroundColor.toHex()}`)
         return
       }
 
-      $row.style.removeProperty('outline')
+      $tr.style.removeProperty('outline')
     }
 
     const isHighlighted = treeItem.isHighlighted()
@@ -567,36 +598,35 @@ class ZeaTreeView extends HTMLElement {
     }
 
     const expandChildren = () => {
-      const isExpanded = this.isItemExpanded(treeItem)
-
-      if (!isExpanded) {
-        return
-      }
+      this.expandedItemsTracker.set(treeItem, true)
       $toggleExpanded.classList.add('arrowDown')
 
+      const children = this.childrenOf(treeItem)
       for (let i = 0; i < children.length; i += 1) {
         const child = children[i]
 
         if (this.shouldRenderItem(child)) {
-          this.addRow(child, i, $row)
+          this.addRow(child, row)
+
+          const childRow = this.rows.get(child)!
+          row.expandedSubtreeCount += childRow.expandedSubtreeCount
         }
       }
     }
 
     const collapseChildren = () => {
+      this.expandedItemsTracker.set(treeItem, false)
       $toggleExpanded.classList.remove('arrowDown')
-
+      const children = this.childrenOf(treeItem)
       children.forEach((child) => {
         if (this.shouldRenderItem(child)) {
           this.removeRow(child)
         }
       })
+      row.expandedSubtreeCount = 0
     }
 
-    // @ts-ignore
-    $row.expandChildren = expandChildren
-
-    this.rows[treeItem.getId()] = $row
+    row.expandChildren = expandChildren
 
     if (isExpanded) {
       expandChildren()
@@ -604,27 +634,23 @@ class ZeaTreeView extends HTMLElement {
   }
 
   removeRow(treeItem: TreeItem) {
-    const $row = this.rows[treeItem.getId()]
-    if (!$row) return
+    const row = this.rows.get(treeItem)
+    if (!row) return
 
-    delete this.rows[treeItem.getId()]
-    $row.parentElement?.removeChild($row)
+    const $tr = row.element
+    $tr.parentElement?.removeChild($tr)
 
-    const id = treeItem.getId()
-    const listenerIds = this.listenerIds[id]
-    delete this.listenerIds[id]
-
-    treeItem.removeListenerById('nameChanged', listenerIds['nameChanged'])
+    treeItem.removeListenerById('nameChanged', row.listenerIds['nameChanged'])
     treeItem.removeListenerById(
       'highlightChanged',
-      listenerIds['highlightChanged']
+      row.listenerIds['highlightChanged']
     )
     treeItem.removeListenerById(
       'visibilityChanged',
-      listenerIds['visibilityChanged']
+      row.listenerIds['visibilityChanged']
     )
-    treeItem.removeListenerById('childAdded', listenerIds['childAdded'])
-    treeItem.removeListenerById('childRemoved', listenerIds['childRemoved'])
+    treeItem.removeListenerById('childAdded', row.listenerIds['childAdded'])
+    treeItem.removeListenerById('childRemoved', row.listenerIds['childRemoved'])
 
     const children = this.childrenOf(treeItem)
     children.forEach((child) => {
@@ -632,6 +658,7 @@ class ZeaTreeView extends HTMLElement {
         this.removeRow(child)
       }
     })
+    this.rows.delete(treeItem)
   }
 
   /**
@@ -646,15 +673,32 @@ class ZeaTreeView extends HTMLElement {
   }
 
   /**
+   * Get an item's parent.
+   */
+  private parentOf(treeItem: TreeItem): TreeItem | undefined {
+    // An item is skipped in the tree view if it is an the child of an instanceItem
+    // An instance and its first child are represented as a single node in the tree.
+    const parentItem = treeItem.getParentItem()
+    if (parentItem) {
+      const parentParentItem = parentItem.getParentItem()
+      if (
+        parentParentItem instanceof InstanceItem &&
+        parentParentItem.getNumChildren() === 1
+      )
+        return parentParentItem ? parentParentItem : parentItem
+    }
+    return parentItem
+  }
+
+  /**
    * Get an item's children.
    */
   private childrenOf(treeItem: TreeItem): TreeItem[] {
-    const retval =
-      treeItem instanceof InstanceItem && treeItem.getNumChildren() === 1
-        ? treeItem.getChild(0).getChildren()
-        : treeItem.getChildren()
-
-    return retval
+    // An item is skipped in the tree view if it is an the child of an instanceItem
+    // An instance and its first child are represented as a single node in the tree.
+    return treeItem instanceof InstanceItem && treeItem.getNumChildren() === 1
+      ? treeItem.getChild(0).getChildren()
+      : treeItem.getChildren()
   }
 
   /**
@@ -700,33 +744,28 @@ class ZeaTreeView extends HTMLElement {
    * Expand and item's ancestors.
    */
   private expandAncestorsOf(treeItem: TreeItem): void {
-    const parent = treeItem.getParentItem()
+    const parent = this.parentOf(treeItem)
 
     if (!parent) {
       return
     }
 
-    const parentIsExpanded = this.isItemExpanded(parent)
+    // Keep looking up till we find a treeItem that has a row.
+    if (!this.rows.get(parent)) {
+      this.expandAncestorsOf(parent)
+    }
 
+    const parentRow = this.rows.get(parent)
+    if (!parentRow) {
+      return
+    }
+
+    const parentIsExpanded = this.expandedItemsTracker.get(parent)
     if (parentIsExpanded) {
       return
     }
 
-    const parentId = parent.getId()
-    this.expandedItemsTracker[parentId] = true
-
-    if (this.isSearching) {
-      this.expandAncestorsOf(parent)
-      return
-    }
-
-    const $row = this.rows[parentId]
-    if ($row) {
-      // @ts-ignore
-      $row.expandChildren()
-    } else {
-      this.expandAncestorsOf(parent)
-    }
+    parentRow.expandChildren!()
   }
 
   /**
@@ -761,8 +800,8 @@ class ZeaTreeView extends HTMLElement {
 
     searchWithin(this.rootTreeItem)
 
-    searchResults.forEach((treeItem, index) => {
-      this.addRow(treeItem, index)
+    searchResults.forEach((treeItem) => {
+      this.addRow(treeItem)
     })
   }
 
@@ -784,8 +823,7 @@ class ZeaTreeView extends HTMLElement {
   }
 
   resetRows(): void {
-    Object.values(this.rows).forEach((row) => {
-      // @ts-ignore
+    this.rows.forEach((row) => {
       this.removeRow(row.treeItem)
     })
   }

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html class="h-full">
+  <head>
+    <title>Zea CAD Viewer (E2E test)</title>
+
+    <link
+      rel="shortcut icon"
+      type="image/png"
+      href="./data/favicon-32x32.png"
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.9/tailwind.min.css"
+    />
+    <link rel="stylesheet" href="./zcad-viewer.css" />
+    <style>
+      .fps-display {
+        position: fixed;
+        bottom: 35px;
+        right: 10px;
+        color: #333333;
+        font-size: 25px;
+      }
+      .status-display {
+        position: fixed;
+        bottom: 2px;
+        left: 10px;
+        color: #ffffff;
+        font-size: 18px;
+      }
+      .cull-stats {
+        position: fixed;
+        bottom: 2px;
+        right: 10px;
+        color: #ffffff;
+        font-size: 18px;
+      }
+      #surface-info {
+        position: fixed;
+        top: 50px;
+        right: 10px;
+        width: 340px;
+        color: #333333;
+        font-size: 12px;
+      }
+      #bottomPanel {
+        height: 30px;
+      }
+
+      .header-buttons {
+        left: 150px;
+        top: 8px;
+        display: block;
+        position: fixed;
+      }
+
+      .header-button {
+        top: 10px;
+        font-family: 'arial';
+        background-color: #f9ce03; /* Green */
+        border: none;
+        color: black;
+        padding: 4px 10px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        user-select: none;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@zeainc/zea-engine/dist/index.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@zeainc/zea-ux/dist/index.umd.js"></script>
+    <script crossorigin src="../dist/index.umd.development.js"></script>
+  </head>
+
+  <body class="overflow-hidden h-full">
+    <div class="h-full flex flex-col">
+      <header class="p-2"></header>
+      <main class="flex flex-col flex-1">
+        <div class="flex-1" id="topPanel">
+          <div class="splitter">
+            <div id="leftPanel">
+              <zea-tree-view id="tree" class="select-none"></zea-tree-view>
+            </div>
+            <div class="separator" id="separatorV"></div>
+            <div id="mainPanel" class="flex-1">
+              <div id="canvas-holder">
+                <canvas id="canvas"></canvas>
+              </div>
+              <progress
+                class="progress-display"
+                id="progress"
+                value="0"
+                max="100"
+              >
+                0%
+              </progress>
+            </div>
+          </div>
+        </div>
+        <div id="bottomPanel">
+          <div class="status-display" id="status"></div>
+        </div>
+      </main>
+    </div>
+    <script type="module">
+      import dragElement from './src/panels.js'
+      const separatorV = document.getElementById('separatorV')
+      const leftPanel = document.getElementById('leftPanel')
+      const mainPanel = document.getElementById('mainPanel')
+      dragElement(separatorV, leftPanel, mainPanel, 'H')
+
+      let leftPanelVisible = true
+      const toggleSidePanel = () => {
+        if (leftPanelVisible) {
+          leftPanel.classList.add('invisible')
+          leftPanel.style.width = '0px'
+          separatorV.style.left = '0px'
+          leftPanelVisible = false
+        } else {
+          leftPanel.classList.remove('invisible')
+          leftPanel.style.width = '200px'
+          separatorV.style.left = '200px'
+          leftPanelVisible = true
+        }
+      }
+    </script>
+
+    <script type="module">
+      const { CADBody, CADAsset } = zeaEngine
+
+      /* eslint-disable require-jsdoc */
+      function init() {
+        const {
+          Color,
+          Vec3,
+          Scene,
+          GLRenderer,
+          EnvMap,
+          resourceLoader,
+          GeomItem,
+          MeshProxy,
+          LinesProxy,
+          AssetLoadContext,
+          CADAsset,
+          CADBody,
+          PMIItem,
+          CompoundGeom,
+          StringFunctions,
+          Xfo,
+        } = zeaEngine
+
+        const urlParams = new URLSearchParams(window.location.search)
+        const scene = new Scene()
+        scene.setupGrid(10.0, 10)
+
+        const renderer = new GLRenderer(document.getElementById('canvas'))
+
+        renderer.outlineMethod = 'geometry'
+        renderer.outlineThickness = 1.5
+        renderer.highlightOutlineThickness = 1.75
+        renderer.hiddenLineColor = new Color(1, 0.15, 0.15, 0.0)
+        // renderer.getViewport().debugHighlightedGeomsBuffer = true
+
+        renderer.setScene(scene)
+        renderer
+          .getViewport()
+          .getCamera()
+          .setPositionAndTarget(new Vec3(12, 12, 10), new Vec3(0, 0, 1.5))
+        if (urlParams.has('dark')) {
+          renderer.getViewport().backgroundColorParam.value = new Color(
+            0.25,
+            0.25,
+            0.25
+          )
+        }
+        renderer
+          .getViewport()
+          .getManipulator()
+          .setDefaultManipulationMode('tumbler')
+
+        const envMap = new EnvMap()
+        envMap.load('./data/StudioG.zenv')
+        scene.setEnvMap(envMap)
+
+        const appData = { scene, renderer }
+
+        /** SELECTION START */
+        const { SelectionManager, SelectionTool } = window.zeaUx
+
+        const selectionManager = new SelectionManager(appData, {
+          enableXfoHandles: true,
+        })
+        appData.selectionManager = selectionManager
+
+        // Users can enable the handles using a menu or hotkey.
+        selectionManager.showHandles(false)
+
+        const selectionTool = new SelectionTool(appData)
+        const filterItemSelection = (item) => {
+          return item
+        }
+        selectionTool.setSelectionFilter(filterItemSelection)
+
+        // Note: the alpha value determines  the fill of the highlight.
+        const selectionColor = new Color('#F9CE03')
+        selectionColor.a = 0.1
+        selectionManager.selectionGroup.highlightColorParam.value =
+          selectionColor
+
+        // Color the selection rect.
+        const selectionRectColor = new Color(0, 0, 0, 1)
+        selectionTool.rectItem.materialParam.value.getParameter(
+          'BaseColor'
+        ).value = selectionRectColor
+
+        /** SELECTION END */
+
+        // Setup FPS Display
+        const fpsElement = document.getElementById('fps')
+        if (fpsElement) fpsElement.renderer = renderer
+
+        // Setup TreeView Display
+        const treeElement = document.getElementById('tree')
+        treeElement.setTreeItem(scene.getRoot(), appData)
+        treeElement.setSelectionManager(selectionManager)
+
+        // let highlightedItem
+
+        /** HIGHLIGHT START */
+        let highlightKey
+        let highlightedItem
+
+        const highlightColor = new Color('#F9CE03')
+        highlightColor.a = 0.1
+        const filterItem = (item) => {
+          while (item && !(item instanceof CADBody || item instanceof PMIItem))
+            item = item.getOwner()
+          return item
+        }
+
+        const shatterGeomsOnMouseOver = true
+        renderer.getViewport().on('pointerMove', (event) => {
+          if (event.intersectionData) {
+            const item = event.intersectionData.geomItem
+            if (item) {
+              let key
+              if (event.intersectionData.componentId >= 0) {
+                key = 'pointerOverGeom:' + event.intersectionData.componentId
+                if (key != highlightKey) {
+                  if (highlightedItem)
+                    highlightedItem.removeHighlight(highlightKey, true)
+                  highlightedItem = item
+                  highlightKey = key
+                  highlightedItem.addHighlight(
+                    highlightKey,
+                    highlightColor,
+                    true
+                  )
+                }
+              } else {
+                if (item instanceof CADBody && shatterGeomsOnMouseOver) {
+                  item.setShatterState(true)
+                  return
+                }
+                if (highlightedItem && item != highlightedItem) {
+                  highlightedItem.removeHighlight(highlightKey, true)
+                }
+                highlightedItem = filterItem(item)
+                highlightKey = 'pointerOverGeom'
+                highlightedItem.addHighlight(highlightKey, highlightColor, true)
+              }
+            }
+          } else {
+            if (highlightedItem) {
+              highlightedItem.removeHighlight(highlightKey, true)
+              if (highlightedItem instanceof CADBody) {
+                highlightedItem.setShatterState(false)
+              }
+              highlightedItem = null
+              highlightKey = ''
+            }
+          }
+        })
+        renderer.getViewport().on('keyDown', (event) => {
+          if (event.key == 'f') renderer.frameAll()
+        })
+        renderer.getViewport().on('pointerDown', (event) => {
+          if (event.intersectionData) {
+            if (event.intersectionData.componentId >= 0) {
+              // const geomItem = filterItem(event.intersectionData.geomItem)
+              // if (geomItem instanceof CADBody && geomItem.geomParam.value instanceof CompoundGeom) {
+              //   // geomItem.assetItem.loadMetadata().then(() => {
+              //   //   const geom = geomItem.geomParam.value
+              //   //   const subGeom = geom.subGeoms[event.intersectionData.componentId]
+              //   //   const json = subGeom.toJSON()
+              //   //   const surfaceInfoElement = document.getElementById('surface-info')
+              //   //   surfaceInfoElement.innerHTML = ''
+              //   //   // surfaceInfoElement.textContent = JSON.stringify(json, null, 2)
+              //   //   for (let key in json.params) {
+              //   //     const p = document.createElement('p')
+              //   //     p.textContent = `${key} : ${StringFunctions.stringifyJSONWithFixedPrecision(json.params[key].value, 0, 3)}`
+              //   //     surfaceInfoElement.appendChild(p)
+              //   //   }
+              //   //   // textContent.split('\n').forEach(line => {
+              //   //   //   const p = document.createElement('p')
+              //   //   //   p.textContent = line
+              //   //   //   surfaceInfoElement.appendChild(p)
+              //   //   // })
+              //   // })
+              // }
+            }
+          }
+        })
+        renderer.getViewport().on('pointerUp', (event) => {
+          if (event.intersectionData) {
+            const item = filterItem(event.intersectionData.geomItem)
+            console.log('', item.getPath())
+            if (item) selectionManager.toggleItemSelection(item, !event.ctrlKey)
+          } else {
+            selectionManager.clearSelection()
+          }
+        })
+        renderer.getViewport().on('pointerDoublePressed', (event) => {
+          if (!event.intersectionData) {
+            renderer.frameAll()
+          }
+        })
+
+        renderer.getViewport().on('keyDown', (event) => {
+          if (event.key == 'f') renderer.frameAll()
+          else if (event.key == 'd') {
+            renderer.getViewport().debugGeomDataBuffer =
+              !renderer.getViewport().debugGeomDataBuffer
+            renderer.requestRedraw()
+          }
+        })
+        /** HIGHLIGHT START */
+
+        resourceLoader.on('progressIncremented', (event) => {
+          const pct = document.getElementById('progress')
+          pct.value = event.percent
+          if (event.percent >= 100) {
+            pct.classList.add('hidden')
+          }
+        })
+
+        renderer.getXRViewport().then((xrvp) => {
+          if (fpsElement) fpsElement.style.bottom = '70px'
+
+          const xrMode = urlParams.has('xrMode')
+            ? urlParams.get('xrMode')
+            : 'AR'
+          const xrButton = document.getElementById('xr-button')
+          xrButton.textContent = 'Launch ' + xrMode
+          xrButton.classList.remove('hidden')
+
+          xrvp.on('presentingChanged', (event) => {
+            const { state } = event
+            if (state) {
+              xrButton.textContent = 'Exit ' + xrMode
+            } else {
+              xrButton.textContent = 'Launch ' + xrMode
+            }
+          })
+
+          xrButton.addEventListener('click', function (event) {
+            xrvp.togglePresenting()
+          })
+
+          document.addEventListener('keydown', (event) => {
+            if (event.key == ' ') {
+              xrvp.togglePresenting()
+            }
+          })
+        })
+
+        if (urlParams.has('profile')) {
+          renderer.startContinuousDrawing()
+        }
+
+        // ////////////////////////////////////////////
+        // Load the asset
+
+        const loadAsset = (url) => {
+          const asset = new CADAsset()
+          scene.getRoot().addChild(asset)
+
+          const start = performance.now()
+          const context = new AssetLoadContext()
+          // context.units = "Millimeters"
+          context.camera = renderer.getViewport().getCamera()
+          asset.load(url, context).then(() => {
+            console.log(
+              'Loading CAD File version:',
+              asset.cadfileVersion,
+              ' exported using SDK:',
+              asset.sdk
+            )
+            renderer.frameAll()
+          })
+          asset.getGeometryLibrary().on('loaded', () => {
+            const duration = performance.now() - start
+            console.log('done-loading :' + duration)
+            setStatusText('done-loading')
+          })
+          if (urlParams.has('ytoz')) {
+            const xfo = new Xfo()
+            xfo.ori.setFromAxisAndAngle(new Vec3(1, 0, 0), Math.PI * 0.5)
+            asset.globalXfoParam.value = xfo
+          }
+        }
+
+        if (urlParams.has('zcad')) {
+          loadAsset(urlParams.get('zcad'))
+        }
+
+        const cullElement = document.getElementById('cull-stats')
+        renderer.on('CullingUpdated', (event) => {
+          if (event.visible && event.total) {
+            cullElement.textContent = `visible: ${event.visible} / total: ${event.total}`
+          }
+        })
+        const statusElement = document.getElementById('status')
+        const setStatusText = (text) => {
+          renderer.forceRender()
+          statusElement.textContent = text
+        }
+      }
+
+      init()
+    </script>
+  </body>
+</html>

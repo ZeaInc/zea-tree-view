@@ -146,7 +146,7 @@ class ZeaTreeView extends HTMLElement {
         if ($tr) {
           $tr.scrollIntoView({
             behavior: 'smooth',
-            block: 'nearest',
+            block: 'center',
           })
         }
       }

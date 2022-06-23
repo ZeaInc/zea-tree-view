@@ -128,9 +128,11 @@ class ZeaTreeView extends HTMLElement {
     this.selectionManager.on('selectionChanged', (event) => {
       const selection: Set<TreeItem> = event.selection
 
-      selection.forEach((treeItem: TreeItem) => {
-        this.expandAncestorsOf(treeItem)
-      })
+      if (!this.isSearching) {
+        selection.forEach((treeItem: TreeItem) => {
+          this.expandAncestorsOf(treeItem)
+        })
+      }
       this.scrollSelectionIntoView()
     })
   }
@@ -684,24 +686,22 @@ class ZeaTreeView extends HTMLElement {
       return
     }
 
+    // Keep looking up till we find a treeItem that has a row.
+    if (!this.rows.get(parent)) {
+      this.expandAncestorsOf(parent)
+    }
+
+    const parentRow = this.rows.get(parent)
+    if (!parentRow) {
+      return
+    }
+
     const parentIsExpanded = this.expandedItemsTracker.get(parent)
     if (parentIsExpanded) {
       return
     }
 
-    this.expandedItemsTracker.set(parent, true)
-
-    if (this.isSearching) {
-      this.expandAncestorsOf(parent)
-      return
-    }
-
-    const row = this.rows.get(parent)
-    if (row) {
-      row.expandChildren!()
-    } else {
-      this.expandAncestorsOf(parent)
-    }
+    parentRow.expandChildren!()
   }
 
   /**

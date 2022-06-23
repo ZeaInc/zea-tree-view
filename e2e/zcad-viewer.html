@@ -241,7 +241,7 @@
           return item
         }
 
-        const shatterGeomsOnMouseOver = true
+        const shatterGeomsOnMouseOver = false
         renderer.getViewport().on('pointerMove', (event) => {
           if (event.intersectionData) {
             const item = event.intersectionData.geomItem
@@ -287,33 +287,6 @@
         renderer.getViewport().on('keyDown', (event) => {
           if (event.key == 'f') renderer.frameAll()
         })
-        renderer.getViewport().on('pointerDown', (event) => {
-          if (event.intersectionData) {
-            if (event.intersectionData.componentId >= 0) {
-              // const geomItem = filterItem(event.intersectionData.geomItem)
-              // if (geomItem instanceof CADBody && geomItem.geomParam.value instanceof CompoundGeom) {
-              //   // geomItem.assetItem.loadMetadata().then(() => {
-              //   //   const geom = geomItem.geomParam.value
-              //   //   const subGeom = geom.subGeoms[event.intersectionData.componentId]
-              //   //   const json = subGeom.toJSON()
-              //   //   const surfaceInfoElement = document.getElementById('surface-info')
-              //   //   surfaceInfoElement.innerHTML = ''
-              //   //   // surfaceInfoElement.textContent = JSON.stringify(json, null, 2)
-              //   //   for (let key in json.params) {
-              //   //     const p = document.createElement('p')
-              //   //     p.textContent = `${key} : ${StringFunctions.stringifyJSONWithFixedPrecision(json.params[key].value, 0, 3)}`
-              //   //     surfaceInfoElement.appendChild(p)
-              //   //   }
-              //   //   // textContent.split('\n').forEach(line => {
-              //   //   //   const p = document.createElement('p')
-              //   //   //   p.textContent = line
-              //   //   //   surfaceInfoElement.appendChild(p)
-              //   //   // })
-              //   // })
-              // }
-            }
-          }
-        })
         renderer.getViewport().on('pointerUp', (event) => {
           if (event.intersectionData) {
             const item = filterItem(event.intersectionData.geomItem)
@@ -329,14 +302,6 @@
           }
         })
 
-        renderer.getViewport().on('keyDown', (event) => {
-          if (event.key == 'f') renderer.frameAll()
-          else if (event.key == 'd') {
-            renderer.getViewport().debugGeomDataBuffer =
-              !renderer.getViewport().debugGeomDataBuffer
-            renderer.requestRedraw()
-          }
-        })
         /** HIGHLIGHT START */
 
         resourceLoader.on('progressIncremented', (event) => {
@@ -346,40 +311,6 @@
             pct.classList.add('hidden')
           }
         })
-
-        renderer.getXRViewport().then((xrvp) => {
-          if (fpsElement) fpsElement.style.bottom = '70px'
-
-          const xrMode = urlParams.has('xrMode')
-            ? urlParams.get('xrMode')
-            : 'AR'
-          const xrButton = document.getElementById('xr-button')
-          xrButton.textContent = 'Launch ' + xrMode
-          xrButton.classList.remove('hidden')
-
-          xrvp.on('presentingChanged', (event) => {
-            const { state } = event
-            if (state) {
-              xrButton.textContent = 'Exit ' + xrMode
-            } else {
-              xrButton.textContent = 'Launch ' + xrMode
-            }
-          })
-
-          xrButton.addEventListener('click', function (event) {
-            xrvp.togglePresenting()
-          })
-
-          document.addEventListener('keydown', (event) => {
-            if (event.key == ' ') {
-              xrvp.togglePresenting()
-            }
-          })
-        })
-
-        if (urlParams.has('profile')) {
-          renderer.startContinuousDrawing()
-        }
 
         // ////////////////////////////////////////////
         // Load the asset

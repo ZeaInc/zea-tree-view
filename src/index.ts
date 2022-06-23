@@ -349,38 +349,102 @@ class ZeaTreeView extends HTMLElement {
 
     $tr.addEventListener('keydown', (event: KeyboardEvent) => {
       switch (event.key) {
-        case 'ArrowUp':
+        case 'ArrowUp': {
           event.preventDefault()
-          const previousSibling = <HTMLTableRowElement>$tr.previousSibling
+          const parentItem = treeItem.getParentItem()
+          if (parentItem) {
+            const index = parentItem.getChildIndex(treeItem)
+            if (index > 0) {
+              const prevChild = parentItem.getChild(index - 1)
+              const row = this.rows.get(prevChild)
+              if (row) {
+                row.element.focus()
+                this.selectItem(prevChild)
+              }
+            } else {
+              // Note: The parent item in the tree may be one level up
+              // because we skip the displaying the children of the InstancItem.
+              const parentItem = this.parentOf(treeItem)
+              if (parentItem) {
+                const row = this.rows.get(parentItem)
+                if (row) {
+                  row.element.focus()
+                  this.selectItem(parentItem)
+                }
+              }
+            }
+          }
+          break
+        }
+        case 'ArrowDown': {
+          event.preventDefault()
+          const parentItem = treeItem.getParentItem()
+          if (parentItem) {
+            const index = parentItem.getChildIndex(treeItem)
+            if (index < parentItem.getNumChildren() - 1) {
+              const nextChild = parentItem.getChild(index + 1)
+              const row = this.rows.get(nextChild)
+              if (row) {
+                row.element.focus()
+                this.selectItem(nextChild)
+              }
+            } else {
+              const parentParentItem = parentItem.getParentItem()
+              if (parentParentItem) {
+                const index = parentParentItem.getChildIndex(parentItem)
+                if (index < parentParentItem.getNumChildren() - 1) {
+                  const nextChild = parentParentItem.getChild(index + 1)
+                  const row = this.rows.get(nextChild)
+                  if (row) {
+                    row.element.focus()
+                    this.selectItem(nextChild)
+                  }
+                }
+              }
+            }
+          } else {
+            const children = this.childrenOf(treeItem)
+            if (
+              this.expandedItemsTracker.get(treeItem) &&
+              children.length > 0
+            ) {
+              const row = this.rows.get(children[0])
+              if (row) {
+                row.element.focus()
+                this.selectItem(children[0])
+              }
+            }
+          }
+          break
+        }
+        case 'ArrowRight': {
+          event.preventDefault()
+          const children = this.childrenOf(treeItem)
+          if (children.length > 0) {
+            if (!this.expandedItemsTracker.get(treeItem)) {
+              expandChildren()
+            }
+            const row = this.rows.get(children[0])
+            if (row) {
+              row.element.focus()
+              this.selectItem(children[0])
+            }
+          }
+          break
+        }
+        case 'ArrowLeft': {
+          event.preventDefault()
 
-          if (!previousSibling) {
-            return
+          if (this.expandedItemsTracker.get(treeItem)) {
+            collapseChildren()
           }
 
-          previousSibling.focus()
-          // @ts-ignore
-          this.selectItem(previousSibling?.treeItem)
+          // const parentItem = treeItem.getParentItem()
+          // if (parentItem) {
+          //   this.selectItem(parentItem)
+          // }
           break
-        case 'ArrowDown':
-          event.preventDefault()
-          const nextSibling = <HTMLTableRowElement>$tr.nextSibling
-
-          if (!nextSibling) {
-            return
-          }
-
-          nextSibling.focus()
-          // @ts-ignore
-          this.selectItem(nextSibling.treeItem)
-          break
-        case 'ArrowRight':
-          event.preventDefault()
-          expandChildren()
-          break
-        case 'ArrowLeft':
-          event.preventDefault()
-          collapseChildren()
-          break
+        }
       }
     })
 

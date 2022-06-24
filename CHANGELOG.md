@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.8](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.7...v0.1.8) (2022-06-24)
+
+
+### Bug Fixes
+
+* the tree-view now scolls to put the item at the center ([f0d3808](https://github.com/ZeaInc/zea-tree-view/commit/f0d3808d2ccda00e3f7ada2e8dd9cfe7d64900de))
+
 ### [0.1.7](https://github.com/ZeaInc/zea-tree-view/compare/v0.1.6...v0.1.7) (2022-06-11)
 
 
